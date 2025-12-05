@@ -1,19 +1,12 @@
 @import "tailwindcss";
 
-/* Smooth global transitions */
+/* Global smooth transitions */
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* Enhanced MUI color-scheme helpers with better contrast in dark mode */
+/* MUI color scheme helpers */
 html[data-mui-color-scheme="dark"] {
-  color-scheme: dark;
-}
-
-html[data-mui-color-scheme="dark"] *,
-html[data-mui-color-scheme="dark"] .MuiPaper-root,
-html[data-mui-color-scheme="dark"] .MuiButton-root,
-html[data-mui-color-scheme="dark"] .MuiTypography-root {
   color-scheme: dark;
 }
 
@@ -27,7 +20,7 @@ html[data-mui-color-scheme="light"] {
   height: 100%;
 }
 
-/* Smooth theme transitions for MUI components */
+/* Smooth theme transitions for MUI elements */
 .MuiPaper-root,
 .MuiButton-root,
 .MuiIconButton-root,
@@ -35,28 +28,54 @@ html[data-mui-color-scheme="light"] {
   transition: background-color 0.3s ease, color 0.3s ease !important;
 }
 
-/* Dark mode text improvements */
-html[data-mui-color-scheme="dark"] .MuiTypography-root,
-html[data-mui-color-scheme="dark"] .MuiTableCell-root,
-html[data-mui-color-scheme="dark"] p,
-html[data-mui-color-scheme="dark"] span,
-html[data-mui-color-scheme="dark"] div {
+/* 🌓 Dark mode body text (base only, not everything!) */
+html[data-mui-color-scheme="dark"] body {
   color: rgb(229, 231, 235);
 }
 
-/* Dark mode input styling */
-html[data-mui-color-scheme="dark"] .MuiTextField-root .MuiOutlinedInput-root {
+/* Optional helper class */
+html[data-mui-color-scheme="dark"] .text-neutral-dark {
   color: rgb(229, 231, 235);
 }
 
+/* Input styling only, no global overrides */
+html[data-mui-color-scheme="dark"] .MuiTextField-root .MuiOutlinedInput-root,
 html[data-mui-color-scheme="dark"] .MuiSelect-root {
   color: rgb(229, 231, 235);
 }
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-  /* Mobile adjustments */
   body {
     font-size: 14px;
   }
+}
+
+/* ================================================================== */
+/* 🧭 SIDEBAR FIX                                                     */
+/* ================================================================== */
+
+/* DARK MODE — force sidebar text & icons to white */
+html[data-mui-color-scheme="dark"] .app-sidebar a,
+html[data-mui-color-scheme="dark"] .app-sidebar a *,
+html[data-mui-color-scheme="dark"] .app-sidebar .MuiListItemIcon-root svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Active link in DARK MODE = primary color */
+html[data-mui-color-scheme="dark"] .app-sidebar a.active,
+html[data-mui-color-scheme="dark"] .app-sidebar a.active * {
+  color: var(--mui-palette-primary-main, #1976d2) !important;
+  fill: var(--mui-palette-primary-main, #1976d2) !important;
+  stroke: var(--mui-palette-primary-main, #1976d2) !important;
+}
+
+/* LIGHT MODE — no force, let MUI handle */
+html[data-mui-color-scheme="light"] .app-sidebar a,
+html[data-mui-color-scheme="light"] .app-sidebar a * {
+  color: inherit !important;
+  stroke: inherit !important;
+  fill: inherit !important;
 }

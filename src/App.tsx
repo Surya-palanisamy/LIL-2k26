@@ -1,30 +1,20 @@
+// src/App.tsx
 "use client";
 
-import { Box, useTheme } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, useTheme, Avatar, Button } from "@mui/material";
+import { Droplets, Menu, X, LogOut } from "lucide-react";
 import {
-  Bell,
-  Building2,
-  Droplets,
-  Home,
-  LogOut,
-  Map,
-  Menu,
-  PhoneCall,
-  RouteIcon,
-  X,
-} from "lucide-react";
-import type React from "react";
-import { useEffect, useState } from "react";
-import {
-  Link,
-  Navigate,
-  Route,
   BrowserRouter as Router,
   Routes,
+  Route,
+  Navigate,
   useLocation,
 } from "react-router-dom";
+
 import LoadingSpinner from "./components/LoadingSpinner";
 import Notifications from "./components/Notifications";
+import Sidebar from "./components/Sidebar";
 import { AppProvider, useAppContext } from "./context/AppContext";
 import adminAvatar from "./images/admin.png";
 import Alerts from "./pages/Alerts";
@@ -36,6 +26,7 @@ import Shelters from "./pages/Shelters";
 import { ThemeModeToggle } from "./shared-theme/ThemeModeToggle";
 import SignInSide from "./sign-in-side/SignInSide";
 
+/* ProtectedRoute kept as-is */
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAppContext();
   const location = useLocation();
@@ -59,7 +50,6 @@ function AppContent() {
 
   useEffect(() => {
     (window as any).__setIsMobileMenuOpen = setIsMobileMenuOpen;
-
     return () => {
       delete (window as any).__setIsMobileMenuOpen;
     };
@@ -119,6 +109,7 @@ function AppContent() {
         transition: "background-color 0.3s ease",
       }}
     >
+      {/* Topbar for mobile */}
       <Box
         sx={{
           display: { xs: "flex", lg: "none" },
@@ -131,7 +122,7 @@ function AppContent() {
           alignItems: "center",
           justifyContent: "space-between",
           p: 2,
-          borderBottom: `1px solid ${muiTheme.palette.divider}`,
+          borderBottom: (t) => `1px solid ${t.palette.divider}`,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -140,28 +131,26 @@ function AppContent() {
             FloodSense
           </span>
         </Box>
+
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <ThemeModeToggle />
           <Notifications />
 
-          <button
+          <Button
             onClick={toggleMobileMenu}
-            style={{
-              padding: "0.5rem",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: muiTheme.palette.text.primary,
-            }}
+            aria-label="Toggle menu"
             data-hamburger="true"
+            sx={{ minWidth: "auto", p: 0.5, color: "text.primary" }}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          </Button>
         </Box>
       </Box>
 
+      {/* Sidebar */}
       <Box
         data-mobile-menu="true"
+        className="app-sidebar"
         sx={{
           position: "fixed",
           left: 0,
@@ -176,13 +165,13 @@ function AppContent() {
           },
           transition: "transform 0.3s ease",
           zIndex: 40,
-          borderRight: `1px solid ${muiTheme.palette.divider}`,
+          borderRight: (t) => `1px solid ${t.palette.divider}`,
         }}
       >
         <Box
           sx={{
             p: 2,
-            borderBottom: `1px solid ${muiTheme.palette.divider}`,
+            borderBottom: (t) => `1px solid ${t.palette.divider}`,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -190,76 +179,36 @@ function AppContent() {
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Droplets size={24} color={muiTheme.palette.primary.main} />
-            <span style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
+            <Box
+              component="span"
+              sx={{ fontSize: "1.25rem", fontWeight: "bold" }}
+            >
               FloodSense
-            </span>
+            </Box>
           </Box>
-          <Box sx={{ display: { xs: "none", lg: "block" } }}>
+
+          <Box
+            sx={{
+              display: { xs: "none", lg: "flex" },
+              gap: 1,
+              alignItems: "center",
+            }}
+          >
             <Notifications />
-          </Box>
-          <Box sx={{display: { xs: "none", lg: "block" }}}>
             <ThemeModeToggle />
           </Box>
         </Box>
 
-        <Box component="nav" sx={{ p: 2, mt: 4, lg: { mt: 0 }, space: 1 }}>
-          <NavLink
-            to="/"
-            icon={<Home size={20} />}
-            label="Dashboard"
-            isActive={location.pathname === "/"}
-            onClick={() => setIsMobileMenuOpen(false)}
-            theme={muiTheme}
-          />
-          <NavLink
-            to="/map"
-            icon={<Map size={20} />}
-            label="Flood Map"
-            isActive={location.pathname === "/map"}
-            onClick={() => setIsMobileMenuOpen(false)}
-            theme={muiTheme}
-          />
-          <NavLink
-            to="/alerts"
-            icon={<Bell size={20} />}
-            label="Alerts"
-            isActive={location.pathname === "/alerts"}
-            onClick={() => setIsMobileMenuOpen(false)}
-            theme={muiTheme}
-          />
-          <NavLink
-            to="/safe-routes"
-            icon={<RouteIcon size={20} />}
-            label="Safe Routes"
-            isActive={location.pathname === "/safe-routes"}
-            onClick={() => setIsMobileMenuOpen(false)}
-            theme={muiTheme}
-          />
-          <NavLink
-            to="/shelters"
-            icon={<Building2 size={20} />}
-            label="Shelters"
-            isActive={location.pathname === "/shelters"}
-            onClick={() => setIsMobileMenuOpen(false)}
-            theme={muiTheme}
-          />
-          <NavLink
-            to="/emergency-help"
-            icon={<PhoneCall size={20} />}
-            label="Emergency Help"
-            isActive={location.pathname === "/emergency-help"}
-            onClick={() => setIsMobileMenuOpen(false)}
-            theme={muiTheme}
-          />
-        </Box>
+        <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
 
+        {/* Footer / profile */}
         <Box
           sx={{
             position: "absolute",
             bottom: 0,
             width: "100%",
             p: 2,
-            borderTop: `1px solid ${muiTheme.palette.divider}`,
+            borderTop: (t) => `1px solid ${t.palette.divider}`,
             bgcolor: "background.paper",
           }}
         >
@@ -273,53 +222,58 @@ function AppContent() {
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Box
                 sx={{
-                  bgcolor: muiTheme.palette.grey[300],
+                  bgcolor: (t: any) =>
+                    t.palette.mode === "dark"
+                      ? t.palette.grey[700]
+                      : t.palette.grey[300],
                   borderRadius: "50%",
                   p: 0.25,
                 }}
               >
-                <img
+                <Avatar
                   src={adminAvatar || user?.avatar}
                   alt={user?.name || "User"}
-                  style={{
-                    width: "40px",
-                    height: "30px",
-                    borderRadius: "50%",
-                  }}
+                  sx={{ width: 40, height: 40 }}
                 />
               </Box>
+
               <Box>
-                <div style={{ fontWeight: 500 }}>
-                  {user?.name || "Admin User"}
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.875rem",
-                    color: muiTheme.palette.text.secondary,
+                <Box
+                  sx={{
+                    fontWeight: 500,
+                    color: (t) =>
+                      t.palette.mode === "dark"
+                        ? t.palette.common.white
+                        : t.palette.text.primary,
                   }}
                 >
+                  {user?.name || "Admin User"}
+                </Box>
+                <Box sx={{ fontSize: "0.875rem", color: "text.secondary" }}>
                   {user?.email || "admin@floodwatch.com"}
-                </div>
+                </Box>
               </Box>
             </Box>
-            <button
+
+            <Button
               onClick={logout}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: muiTheme.palette.text.secondary,
-                padding: "0.5rem",
-                borderRadius: "0.375rem",
+              variant="text"
+              sx={{
+                color: "text.secondary",
+                minWidth: "auto",
+                p: 0.75,
+                borderRadius: 1,
               }}
+              aria-label="Logout"
               title="Logout"
             >
               <LogOut size={20} />
-            </button>
+            </Button>
           </Box>
         </Box>
       </Box>
 
+      {/* Main content */}
       <Box
         sx={{
           marginLeft: { xs: 0, lg: "256px" },
@@ -383,44 +337,6 @@ function AppContent() {
     </Box>
   );
 }
-
-interface NavLinkProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-  theme: any;
-}
-
-const NavLink: React.FC<NavLinkProps> = ({
-  to,
-  icon,
-  label,
-  isActive,
-  onClick,
-  theme,
-}) => (
-  <Link
-    to={to}
-    onClick={onClick}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "0.75rem",
-      padding: "0.75rem",
-      borderRadius: "0.5rem",
-      textDecoration: "none",
-      color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
-      backgroundColor: isActive ? theme.palette.action.selected : "transparent",
-      transition: "all 0.2s ease",
-      marginBottom: "0.5rem",
-    }}
-  >
-    {icon}
-    <span>{label}</span>
-  </Link>
-);
 
 function App() {
   return (

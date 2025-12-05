@@ -1,7 +1,9 @@
-"use client"
-import L from "leaflet"
-import "leaflet-routing-machine"
-import "leaflet/dist/leaflet.css"
+"use client";
+
+import { useTheme } from "@mui/material/styles";
+import L from "leaflet";
+import "leaflet-routing-machine";
+import "leaflet/dist/leaflet.css";
 import {
   AlertCircle,
   AlertTriangle,
@@ -15,82 +17,97 @@ import {
   Printer,
   RefreshCw,
   Search,
-  Send,
   Users,
-  X,
-} from "lucide-react"
-import PriorityQueue from "priorityqueuejs"
-import { useEffect, useRef, useState, type FormEvent } from "react"
-import { MapContainer, Marker, Polygon, Polyline, Popup, TileLayer, useMap } from "react-leaflet"
-import LoadingSpinner from "../components/LoadingSpinner"
-import { useAppContext } from "../context/AppContext"
+  X
+} from "lucide-react";
+import PriorityQueue from "priorityqueuejs";
+import React, { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  Polyline,
+  Popup,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { useAppContext } from "../context/AppContext";
 
 // Fix for default marker icons in react-leaflet
-import icon from "leaflet/dist/images/marker-icon.png"
-import iconShadow from "leaflet/dist/images/marker-shadow.png"
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
+  iconUrl,
+  shadowUrl: iconShadowUrl,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
-})
+});
 
-L.Marker.prototype.options.icon = DefaultIcon
+L.Marker.prototype.options.icon = DefaultIcon;
 
-// Define types for our data
+/* ---------- Types ---------- */
 interface Route {
-  id: string
-  name: string
-  status: "Open" | "Warning" | "Closed"
-  statusColor: string
-  updated: string
-  startPoint: [number, number]
-  endPoint: [number, number]
-  district: string
+  id: string;
+  name: string;
+  status: "Open" | "Warning" | "Closed";
+  statusColor: string;
+  updated: string;
+  startPoint: [number, number];
+  endPoint: [number, number];
+  district: string;
 }
 
 interface Update {
-  id: string
-  time: string
-  title: string
-  description: string
-  severity: "High" | "Medium" | "Low"
+  id: string;
+  time: string;
+  title: string;
+  description: string;
+  severity: "High" | "Medium" | "Low";
 }
 
 interface Communication {
-  id: string
-  title: string
-  time: string
-  recipients: string
-  status: "Delivered" | "Pending" | "Failed"
+  id: string;
+  title: string;
+  time: string;
+  recipients: string;
+  status: "Delivered" | "Pending" | "Failed";
 }
 
 interface FloodZone {
-  id: string
-  name: string
-  coordinates: [number, number][]
-  riskLevel: "high" | "medium" | "low"
+  id: string;
+  name: string;
+  coordinates: [number, number][];
+  riskLevel: "high" | "medium" | "low";
 }
 
 interface GraphNode {
-  id: string
-  coordinates: [number, number]
+  id: string;
+  coordinates: [number, number];
   connections: {
-    nodeId: string
-    distance: number
-    riskLevel: "high" | "medium" | "low" | "safe"
-  }[]
+    nodeId: string;
+    distance: number;
+    riskLevel: "high" | "medium" | "low" | "safe";
+  }[];
 }
 
-// Component to update map view when center changes
-function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap()
-  map.setView(center, zoom)
-  return null
+/* ---------- Simple ChangeView for react-leaflet ---------- */
+function ChangeView({
+  center,
+  zoom,
+}: {
+  center: [number, number];
+  zoom: number;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
 }
 
-// Tamil Nadu districts data
+/* ---------- Mocked Tamil Nadu district coordinates ---------- */
 const tamilNaduDistricts: { name: string; coordinates: [number, number] }[] = [
   { name: "Chennai", coordinates: [13.0827, 80.2707] },
   { name: "Coimbatore", coordinates: [11.0168, 76.9558] },
@@ -129,8 +146,7 @@ const tamilNaduDistricts: { name: string; coordinates: [number, number] }[] = [
   { name: "Tirupattur", coordinates: [12.495, 78.5686] },
   { name: "Villupuram", coordinates: [11.9401, 79.4861] },
   { name: "Theni", coordinates: [10.0104, 77.4768] },
-  { name: "Thoothukkudi", coordinates: [8.7642, 78.1348] },
-  // Chennai-specific areas
+  // Chennai neighborhoods
   { name: "Chennai Central", coordinates: [13.0827, 80.2707] },
   { name: "T. Nagar", coordinates: [13.0418, 80.2341] },
   { name: "Adyar", coordinates: [13.0012, 80.2565] },
@@ -141,217 +157,244 @@ const tamilNaduDistricts: { name: string; coordinates: [number, number] }[] = [
   { name: "Sholinganallur", coordinates: [12.901, 80.2279] },
   { name: "Guindy", coordinates: [13.0067, 80.2206] },
   { name: "Mylapore", coordinates: [13.0368, 80.2676] },
-]
+];
 
+/* ---------- Component ---------- */
 export default function SafeRoutes() {
-  const { refreshData, sendEmergencyBroadcast, isLoading, userLocation, addAlert } = useAppContext()
-  const [selectedView, setSelectedView] = useState("Traffic")
-  const [notificationMessage, setNotificationMessage] = useState("")
-  const [notificationPriority, setNotificationPriority] = useState("High")
-  const [notificationRecipients, setNotificationRecipients] = useState("All Recipients")
-  const [refreshing, setRefreshing] = useState(false)
-  const [routes, setRoutes] = useState<Route[]>([])
-  const [updates, setUpdates] = useState<Update[]>([])
-  const [communications, setCommunications] = useState<Communication[]>([])
-  const [showRouteDetails, setShowRouteDetails] = useState<string | null>(null)
-  const [sendingNotification, setSendingNotification] = useState(false)
-  const [mapCenter, setMapCenter] = useState<[number, number]>([13.0827, 80.2707]) // Chennai center
-  const [mapZoom, setMapZoom] = useState(11)
-  const [mapType, setMapType] = useState<"street" | "satellite">("street")
-  const [showLayers, setShowLayers] = useState(false)
-  const [showFloodZones, setShowFloodZones] = useState(true)
-  const [showShelters, setShowShelters] = useState(true)
-  const [showRoads, setShowRoads] = useState(true)
-  const [fullScreenMap, setFullScreenMap] = useState(false)
-  const [selectedDistrict, setSelectedDistrict] = useState("All Districts")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [routingControl, setRoutingControl] = useState<L.Routing.Control | null>(null)
-  const [customRoute, setCustomRoute] = useState<{
-    start: [number, number] | null
-    end: [number, number] | null
-  }>({ start: null, end: null })
-  const [fromLocation, setFromLocation] = useState("Chennai Central")
-  const [toLocation, setToLocation] = useState("Adyar")
-  const [routeRiskLevel, setRouteRiskLevel] = useState<"high" | "medium" | "low" | null>(null)
-  const [showRouteRisk, setShowRouteRisk] = useState(false)
-  const [riskRoutes, setRiskRoutes] = useState<{
-    high: L.Polyline | null
-    medium: L.Polyline | null
-    low: L.Polyline | null
-  }>({ high: null, medium: null, low: null })
-  const [floodZones, setFloodZones] = useState<FloodZone[]>([])
-  const [roadNetwork, setRoadNetwork] = useState<GraphNode[]>([])
-  const [shortestPath, setShortestPath] = useState<[number, number][] | null>(null)
-  const [showShortestPath, setShowShortestPath] = useState(true)
-  const [avoidFloodZones, setAvoidFloodZones] = useState(true)
+  const theme = useTheme();
+  const {
+    refreshData,
+    sendEmergencyBroadcast,
+    isLoading,
+    userLocation,
+    addAlert,
+  } = useAppContext();
 
-  const mapRef = useRef<L.Map | null>(null)
+  /* ---------- Local state (kept same layout/align) ---------- */
+  const [selectedView, setSelectedView] = useState("Traffic");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationPriority, setNotificationPriority] = useState("High");
+  const [notificationRecipients, setNotificationRecipients] =
+    useState("All Recipients");
+  const [refreshing, setRefreshing] = useState(false);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [updates, setUpdates] = useState<Update[]>([]);
+  const [communications, setCommunications] = useState<Communication[]>([]);
+  const [showRouteDetails, setShowRouteDetails] = useState<string | null>(null);
+  const [sendingNotification, setSendingNotification] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([
+    13.0827, 80.2707,
+  ]);
+  const [mapZoom, setMapZoom] = useState(11);
+  const [mapType, setMapType] = useState<"street" | "satellite">("street");
+  const [showLayers, setShowLayers] = useState(false);
+  const [showFloodZones, setShowFloodZones] = useState(true);
+  const [showShelters, setShowShelters] = useState(true);
+  const [showRoads, setShowRoads] = useState(true);
+  const [fullScreenMap, setFullScreenMap] = useState(false);
+  const [selectedDistrict, setSelectedDistrict] = useState("All Districts");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [routingControl, setRoutingControl] =
+    useState<L.Routing.Control | null>(null);
+  const [customRoute, setCustomRoute] = useState<{
+    start: [number, number] | null;
+    end: [number, number] | null;
+  }>({ start: null, end: null });
+  const [fromLocation, setFromLocation] = useState("Chennai Central");
+  const [toLocation, setToLocation] = useState("Adyar");
+  const [routeRiskLevel, setRouteRiskLevel] = useState<
+    "high" | "medium" | "low" | null
+  >(null);
+  const [showRouteRisk, setShowRouteRisk] = useState(false);
+  const [riskRoutes, setRiskRoutes] = useState<{
+    high: L.Polyline | null;
+    medium: L.Polyline | null;
+    low: L.Polyline | null;
+  }>({ high: null, medium: null, low: null });
+  const [floodZones, setFloodZones] = useState<FloodZone[]>([]);
+  const [roadNetwork, setRoadNetwork] = useState<GraphNode[]>([]);
+  const [shortestPath, setShortestPath] = useState<[number, number][] | null>(
+    null
+  );
+  const [showShortestPath, setShowShortestPath] = useState(true);
+  const [avoidFloodZones, setAvoidFloodZones] = useState(true);
+
+  const mapRef = useRef<L.Map | null>(null);
 
   const stats = [
     {
       title: "Active Evacuations",
       value: "3",
-      icon: <AlertTriangle className="text-red-500" size={20} />,
+      icon: <AlertTriangle size={20} />,
       className: "border-red-100",
     },
     {
       title: "Blocked Roads",
       value: "12",
-      icon: <AlertCircle className="text-orange-500" size={20} />,
+      icon: <AlertCircle size={20} />,
       className: "border-orange-100",
     },
     {
       title: "Safe Routes",
       value: "8",
-      icon: <CheckCircle2 className="text-green-500" size={20} />,
+      icon: <CheckCircle2 size={20} />,
       className: "border-green-100",
     },
     {
       title: "Active Users",
       value: "1,247",
-      icon: <Users className="text-blue-500" size={20} />,
+      icon: <Users size={20} />,
       className: "border-blue-100",
     },
-  ]
+  ];
 
-  // Add the useEffect to load default routes on component mount
-
-  // Load mock data on mount
+  /* ---------- Lifecycle ---------- */
   useEffect(() => {
-    loadMockData()
-  }, [])
+    loadMockData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Set user location as map center if available
   useEffect(() => {
     if (userLocation) {
-      setMapCenter([userLocation.lat, userLocation.lng])
-      setMapZoom(12)
+      setMapCenter([userLocation.lat, userLocation.lng]);
+      setMapZoom(12);
     }
-  }, [userLocation])
+  }, [userLocation]);
 
-  // Check for navigation target from notifications
   useEffect(() => {
-    const navigationTarget = localStorage.getItem("mapNavigationTarget")
+    const navigationTarget = localStorage.getItem("mapNavigationTarget");
     if (navigationTarget) {
       try {
-        const target = JSON.parse(navigationTarget)
+        const target = JSON.parse(navigationTarget);
         if (target.coordinates) {
-          setMapCenter(target.coordinates)
-          setMapZoom(target.zoom || 15)
-
-          // Clear the navigation target
-          localStorage.removeItem("mapNavigationTarget")
+          setMapCenter(target.coordinates);
+          setMapZoom(target.zoom || 15);
+          localStorage.removeItem("mapNavigationTarget");
         }
-      } catch (error) {
-        console.error("Error parsing navigation target:", error)
+      } catch (err) {
+        console.error("navigationTarget parse error", err);
       }
     }
-  }, [])
+  }, []);
 
-  // Set default from/to locations and calculate routes
   useEffect(() => {
     if (mapRef.current) {
-      // Wait a bit for the map to be fully initialized
       const timer = setTimeout(() => {
-        calculateSafeRoute({ preventDefault: () => {} } as FormEvent)
-      }, 1500)
-
-      return () => clearTimeout(timer)
+        calculateSafeRoute({ preventDefault: () => {} } as FormEvent);
+      }, 1200);
+      return () => clearTimeout(timer);
     }
-  }, [mapRef.current])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapRef.current, roadNetwork]);
 
+  /* ---------- Data generation ---------- */
   const loadMockData = async () => {
-    // Generate Tamil Nadu based routes
-    const tamilNaduRoutes: Route[] = tamilNaduDistricts.slice(0, 8).map((district, index) => {
-      const statusOptions = ["Open", "Warning", "Closed", "Open", "Open", "Warning", "Open", "Closed"]
-      const statusColorOptions = [
-        "text-green-500",
-        "text-orange-500",
-        "text-red-500",
-        "text-green-500",
-        "text-green-500",
-        "text-orange-500",
-        "text-green-500",
-        "text-red-500",
-      ]
-      const updatedOptions = [
-        "2 mins ago",
-        "5 mins ago",
-        "12 mins ago",
-        "15 mins ago",
-        "20 mins ago",
-        "25 mins ago",
-        "30 mins ago",
-        "35 mins ago",
-      ]
+    // create routes from first 8 districts
+    const tamilNaduRoutes: Route[] = tamilNaduDistricts
+      .slice(0, 8)
+      .map((district, index) => {
+        const statusOptions = [
+          "Open",
+          "Warning",
+          "Closed",
+          "Open",
+          "Open",
+          "Warning",
+          "Open",
+          "Closed",
+        ];
+        const statusColorOptions = [
+          "text-green-500",
+          "text-orange-500",
+          "text-red-500",
+          "text-green-500",
+          "text-green-500",
+          "text-orange-500",
+          "text-green-500",
+          "text-red-500",
+        ];
+        const updatedOptions = [
+          "2 mins ago",
+          "5 mins ago",
+          "12 mins ago",
+          "15 mins ago",
+          "20 mins ago",
+          "25 mins ago",
+          "30 mins ago",
+          "35 mins ago",
+        ];
 
-      // Generate a random end point near the district
-      const endLat = district.coordinates[0] + (Math.random() * 0.1 - 0.05)
-      const endLng = district.coordinates[1] + (Math.random() * 0.1 - 0.05)
+        const endLat = district.coordinates[0] + (Math.random() * 0.1 - 0.05);
+        const endLng = district.coordinates[1] + (Math.random() * 0.1 - 0.05);
 
-      return {
-        id: `route${index + 1}`,
-        name: `${district.name} Evacuation Route`,
-        status: statusOptions[index] as "Open" | "Warning" | "Closed",
-        statusColor: statusColorOptions[index],
-        updated: updatedOptions[index],
-        startPoint: district.coordinates,
-        endPoint: [endLat, endLng],
-        district: district.name,
-      }
-    })
-    setRoutes(tamilNaduRoutes)
+        return {
+          id: `route${index + 1}`,
+          name: `${district.name} Evacuation Route`,
+          status: statusOptions[index] as "Open" | "Warning" | "Closed",
+          statusColor: statusColorOptions[index],
+          updated: updatedOptions[index],
+          startPoint: district.coordinates,
+          endPoint: [endLat, endLng],
+          district: district.name,
+        };
+      });
 
-    // Generate updates based on routes
-    const generatedUpdates: Update[] = tamilNaduRoutes.slice(0, 3).map((route, index) => {
-      const severityOptions = ["High", "Medium", "Low"]
-      const descriptionOptions = [
-        `Road closure due to flooding in ${route.district}`,
-        `Heavy traffic congestion in ${route.district}`,
-        `Route cleared and reopened in ${route.district}`,
-      ]
+    setRoutes(tamilNaduRoutes);
 
-      return {
-        id: `update${index + 1}`,
-        time: new Date(Date.now() - 1000 * 60 * (15 * (index + 1))).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        title: `${route.district} ${index === 0 ? "Bridge" : index === 1 ? "Highway Exit" : "Route"}`,
-        description: descriptionOptions[index],
-        severity: severityOptions[index] as "High" | "Medium" | "Low",
-      }
-    })
-    setUpdates(generatedUpdates)
+    const generatedUpdates: Update[] = tamilNaduRoutes
+      .slice(0, 3)
+      .map((route, index) => {
+        const severityOptions = ["High", "Medium", "Low"];
+        const descriptionOptions = [
+          `Road closure due to flooding in ${route.district}`,
+          `Heavy traffic congestion in ${route.district}`,
+          `Route cleared and reopened in ${route.district}`,
+        ];
 
-    // Generate communications
+        return {
+          id: `update${index + 1}`,
+          time: new Date(
+            Date.now() - 1000 * 60 * 15 * (index + 1)
+          ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          title: `${route.district} ${
+            index === 0 ? "Bridge" : index === 1 ? "Highway Exit" : "Route"
+          }`,
+          description: descriptionOptions[index],
+          severity: severityOptions[index] as "High" | "Medium" | "Low",
+        };
+      });
+    setUpdates(generatedUpdates);
+
     const generatedCommunications: Communication[] = [
       {
         id: "comm1",
         title: "Emergency evacuation required for Chennai area",
-        time: new Date(Date.now() - 1000 * 60 * 15).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        time: new Date(Date.now() - 1000 * 60 * 15).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         recipients: "1,247",
         status: "Delivered",
       },
       {
         id: "comm2",
         title: "New safe route available via Coimbatore East",
-        time: new Date(Date.now() - 1000 * 60 * 30).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        time: new Date(Date.now() - 1000 * 60 * 30).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         recipients: "892",
         status: "Delivered",
       },
-    ]
-    setCommunications(generatedCommunications)
+    ];
+    setCommunications(generatedCommunications);
 
-    // Generate flood zones and road network
-    generateMockFloodZones()
-    setTimeout(() => {
-      generateRoadNetwork()
-    }, 500)
-  }
+    // flood zones & road network
+    generateMockFloodZones();
+    setTimeout(() => generateRoadNetwork(), 500);
+  };
 
   const generateMockFloodZones = () => {
-    // Generate mock flood zones for demonstration
     const mockFloodZones: FloodZone[] = [
       {
         id: "flood1",
@@ -389,415 +432,201 @@ export default function SafeRoutes() {
         ],
         riskLevel: "high",
       },
-      {
-        id: "flood4",
-        name: "Tambaram Flood Zone",
-        coordinates: [
-          [12.9249, 80.1],
-          [12.9349, 80.11],
-          [12.9149, 80.12],
-          [12.9049, 80.11],
-          [12.9249, 80.1],
-        ],
-        riskLevel: "low",
-      },
-      {
-        id: "flood5",
-        name: "Porur Flood Zone",
-        coordinates: [
-          [13.0359, 80.1567],
-          [13.0459, 80.1667],
-          [13.0259, 80.1767],
-          [13.0159, 80.1667],
-          [13.0359, 80.1567],
-        ],
-        riskLevel: "medium",
-      },
-    ]
-
-    setFloodZones(mockFloodZones)
-  }
+    ];
+    setFloodZones(mockFloodZones);
+  };
 
   const generateRoadNetwork = () => {
-    // Create a graph of nodes and connections for Dijkstra's algorithm
-    // In a real application, this would be based on actual road data
-    const nodes: GraphNode[] = tamilNaduDistricts.map((district) => ({
-      id: district.name,
-      coordinates: district.coordinates,
+    const nodes: GraphNode[] = tamilNaduDistricts.map((d) => ({
+      id: d.name,
+      coordinates: d.coordinates,
       connections: [],
-    }))
+    }));
 
-    // Create connections between nodes (roads)
-    // For simplicity, we'll connect each node to its 3 nearest neighbors
     nodes.forEach((node) => {
-      const otherNodes = nodes.filter((n) => n.id !== node.id)
-
-      // Sort other nodes by distance
-      const sortedNodes = otherNodes.sort((a, b) => {
-        const distA = calculateDistance(node.coordinates, a.coordinates)
-        const distB = calculateDistance(node.coordinates, b.coordinates)
-        return distA - distB
-      })
-
-      // Connect to 3 nearest nodes
-      for (let i = 0; i < Math.min(3, sortedNodes.length); i++) {
-        const distance = calculateDistance(node.coordinates, sortedNodes[i].coordinates)
-
-        // Check if the connection passes through a flood zone
-        let riskLevel: "high" | "medium" | "low" | "safe" = "safe"
-
-        for (const floodZone of floodZones) {
-          if (isPathCrossingPolygon(node.coordinates, sortedNodes[i].coordinates, floodZone.coordinates)) {
-            riskLevel = floodZone.riskLevel
-            break
+      const others = nodes.filter((n) => n.id !== node.id);
+      const sorted = others.sort(
+        (a, b) =>
+          calculateDistance(node.coordinates, a.coordinates) -
+          calculateDistance(node.coordinates, b.coordinates)
+      );
+      for (let i = 0; i < Math.min(3, sorted.length); i++) {
+        const distance = calculateDistance(
+          node.coordinates,
+          sorted[i].coordinates
+        );
+        let riskLevel: "high" | "medium" | "low" | "safe" = "safe";
+        for (const fz of floodZones) {
+          if (
+            isPathCrossingPolygon(
+              node.coordinates,
+              sorted[i].coordinates,
+              fz.coordinates
+            )
+          ) {
+            riskLevel = fz.riskLevel;
+            break;
           }
         }
-
-        node.connections.push({
-          nodeId: sortedNodes[i].id,
-          distance,
-          riskLevel,
-        })
+        node.connections.push({ nodeId: sorted[i].id, distance, riskLevel });
       }
-    })
+    });
 
-    setRoadNetwork(nodes)
-  }
+    setRoadNetwork(nodes);
+  };
 
-  const calculateDistance = (point1: [number, number], point2: [number, number]): number => {
-    // Calculate Haversine distance between two points (lat/lng)
-    const R = 6371 // Earth's radius in km
-    const dLat = ((point2[0] - point1[0]) * Math.PI) / 180
-    const dLon = ((point2[1] - point1[1]) * Math.PI) / 180
+  /* ---------- Geometry helpers ---------- */
+  const calculateDistance = (
+    point1: [number, number],
+    point2: [number, number]
+  ): number => {
+    const R = 6371;
+    const dLat = ((point2[0] - point1[0]) * Math.PI) / 180;
+    const dLon = ((point2[1] - point1[1]) * Math.PI) / 180;
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((point1[0] * Math.PI) / 180) *
         Math.cos((point2[0] * Math.PI) / 180) *
         Math.sin(dLon / 2) *
-        Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-  }
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
 
   const isPathCrossingPolygon = (
     start: [number, number],
     end: [number, number],
-    polygonCoords: [number, number][],
-  ): boolean => {
-    // Simplified check - in a real app, you'd use a proper geometric intersection algorithm
-    // This is a basic approximation that checks if the midpoint is inside the polygon
-    const midpoint: [number, number] = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2]
+    polygonCoords: [number, number][]
+  ) => {
+    const midpoint: [number, number] = [
+      (start[0] + end[0]) / 2,
+      (start[1] + end[1]) / 2,
+    ];
+    return isPointInPolygon(midpoint, polygonCoords);
+  };
 
-    return isPointInPolygon(midpoint, polygonCoords)
-  }
-
-  const isPointInPolygon = (point: [number, number], polygon: [number, number][]): boolean => {
-    // Ray casting algorithm to determine if a point is inside a polygon
-    let inside = false
+  const isPointInPolygon = (
+    point: [number, number],
+    polygon: [number, number][]
+  ) => {
+    let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
       const xi = polygon[i][1],
-        yi = polygon[i][0]
+        yi = polygon[i][0];
       const xj = polygon[j][1],
-        yj = polygon[j][0]
-
-      const intersect = yi > point[0] !== yj > point[0] && point[1] < ((xj - xi) * (point[0] - yi)) / (yj - yi) + xi
-      if (intersect) inside = !inside
+        yj = polygon[j][0];
+      const intersect =
+        yi > point[0] !== yj > point[0] &&
+        point[1] < ((xj - xi) * (point[0] - yi)) / (yj - yi) + xi;
+      if (intersect) inside = !inside;
     }
+    return inside;
+  };
 
-    return inside
-  }
-
-  const findShortestPath = (startNodeId: string, endNodeId: string, avoidFloodAreas = true): [number, number][] => {
-    // Implementation of Dijkstra's algorithm to find the shortest path
-    const startNode = roadNetwork.find((node) => node.id === startNodeId)
-    const endNode = roadNetwork.find((node) => node.id === endNodeId)
-
+  /* ---------- Dijkstra-style shortest path ---------- */
+  const findShortestPath = (
+    startNodeId: string,
+    endNodeId: string,
+    avoidFloodAreas = true
+  ): [number, number][] => {
+    const startNode = roadNetwork.find((n) => n.id === startNodeId);
+    const endNode = roadNetwork.find((n) => n.id === endNodeId);
     if (!startNode || !endNode) {
-      console.error("Start or end node not found in road network")
-      return []
+      console.error("start/end not in network");
+      return [];
     }
 
-    // Initialize data structures
-    const distances: Record<string, number> = {}
-    const previous: Record<string, string | null> = {}
-    const visited: Set<string> = new Set()
+    const distances: Record<string, number> = {};
+    const previous: Record<string, string | null> = {};
+    const visited = new Set<string>();
+    const pq = new PriorityQueue(
+      (
+        a: { id: string; distance: number },
+        b: { id: string; distance: number }
+      ) => b.distance - a.distance
+    );
 
-    // Create a priority queue
-    const queue = new PriorityQueue((a: { id: string; distance: number }, b: { id: string; distance: number }) => {
-      return b.distance - a.distance // Lower distance has higher priority
-    })
+    roadNetwork.forEach((n) => {
+      distances[n.id] = Number.POSITIVE_INFINITY;
+      previous[n.id] = null;
+    });
 
-    // Initialize all distances as infinity
-    roadNetwork.forEach((node) => {
-      distances[node.id] = Number.POSITIVE_INFINITY
-      previous[node.id] = null
-    })
+    distances[startNodeId] = 0;
+    pq.enq({ id: startNodeId, distance: 0 });
 
-    // Distance from start to start is 0
-    distances[startNodeId] = 0
-    queue.enq({ id: startNodeId, distance: 0 })
+    while (!pq.isEmpty()) {
+      const cur = pq.deq();
+      if (!cur) break;
+      if (visited.has(cur.id)) continue;
+      visited.add(cur.id);
+      if (cur.id === endNodeId) break;
 
-    // Main algorithm loop
-    while (!queue.isEmpty()) {
-      const current = queue.deq()
+      const currentNode = roadNetwork.find((n) => n.id === cur.id);
+      if (!currentNode) continue;
 
-      // If we've reached the destination, we're done
-      if (current.id === endNodeId) break
+      for (const conn of currentNode.connections) {
+        if (avoidFloodAreas && conn.riskLevel === "high") continue;
+        let riskMultiplier = 1;
+        if (conn.riskLevel === "medium")
+          riskMultiplier = avoidFloodAreas ? 2 : 1;
+        if (conn.riskLevel === "low")
+          riskMultiplier = avoidFloodAreas ? 1.5 : 1;
 
-      // Skip if we've already processed this node
-      if (visited.has(current.id)) continue
-      visited.add(current.id)
-
-      // Get the current node
-      const currentNode = roadNetwork.find((node) => node.id === current.id)
-      if (!currentNode) continue
-
-      // Check all connections from current node
-      for (const connection of currentNode.connections) {
-        // Skip high-risk connections if avoiding flood areas
-        if (avoidFloodAreas && connection.riskLevel === "high") continue
-
-        // Apply risk multiplier to distance
-        let riskMultiplier = 1
-        if (connection.riskLevel === "medium") riskMultiplier = avoidFloodAreas ? 2 : 1
-        if (connection.riskLevel === "low") riskMultiplier = avoidFloodAreas ? 1.5 : 1
-
-        const distance = distances[current.id] + connection.distance * riskMultiplier
-
-        // If we found a better path, update it
-        if (distance < distances[connection.nodeId]) {
-          distances[connection.nodeId] = distance
-          previous[connection.nodeId] = current.id
-          queue.enq({ id: connection.nodeId, distance })
+        const newDist = distances[cur.id] + conn.distance * riskMultiplier;
+        if (newDist < distances[conn.nodeId]) {
+          distances[conn.nodeId] = newDist;
+          previous[conn.nodeId] = cur.id;
+          pq.enq({ id: conn.nodeId, distance: newDist });
         }
       }
     }
 
-    // Reconstruct the path
-    const path: string[] = []
-    let current = endNodeId
-
-    while (current && current !== startNodeId) {
-      path.unshift(current)
-      current = previous[current] || ""
+    const pathIds: string[] = [];
+    let curId: string | null = endNodeId;
+    while (curId && curId !== startNodeId) {
+      pathIds.unshift(curId);
+      curId = previous[curId] || null;
     }
+    if (pathIds.length > 0 || startNodeId === endNodeId)
+      pathIds.unshift(startNodeId);
 
-    if (path.length > 0 || startNodeId === endNodeId) {
-      path.unshift(startNodeId)
-    }
+    const coords = pathIds.map((id) => {
+      const n = roadNetwork.find((x) => x.id === id);
+      return n ? n.coordinates : [0, 0];
+    });
+    return coords;
+  };
 
-    // Convert path of node IDs to coordinates
-    const pathCoordinates: [number, number][] = path.map((nodeId) => {
-      const node = roadNetwork.find((n) => n.id === nodeId)
-      return node ? node.coordinates : [0, 0]
-    })
-
-    return pathCoordinates
-  }
-
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    await refreshData()
-    await loadMockData()
-    setTimeout(() => setRefreshing(false), 1000)
-  }
-
-  const handleSendNotification = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!notificationMessage.trim()) return
-
-    setSendingNotification(true)
-    try {
-      await sendEmergencyBroadcast(
-        notificationMessage,
-        selectedDistrict !== "All Districts" ? selectedDistrict : undefined,
-      )
-
-      // Add to communications list
-      const newCommunication: Communication = {
-        id: `comm${communications.length + 1}`,
-        title: notificationMessage,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        recipients: notificationRecipients === "All Recipients" ? "1,247" : "500",
-        status: "Delivered",
-      }
-
-      setCommunications([newCommunication, ...communications])
-      setNotificationMessage("")
-
-      // Show success notification
-      addAlert({
-        title: "Notification Sent",
-        message: `Your emergency notification has been sent to ${notificationRecipients}`,
-        type: "success",
-      })
-    } catch (error) {
-      console.error("Error sending notification:", error)
-
-      // Show error notification
-      addAlert({
-        title: "Notification Failed",
-        message: "There was an error sending your notification. Please try again.",
-        type: "error",
-      })
-    } finally {
-      setSendingNotification(false)
-    }
-  }
-
-  const handleViewRouteDetails = (routeId: string) => {
-    setShowRouteDetails(routeId)
-
-    // Find the route
-    const route = routes.find((r) => r.id === routeId)
-    if (route) {
-      // Center map on route
-      const center: [number, number] = [
-        (route.startPoint[0] + route.endPoint[0]) / 2,
-        (route.startPoint[1] + route.endPoint[1]) / 2,
-      ]
-      setMapCenter(center)
-      setMapZoom(12)
-
-      // Calculate route
-      if (mapRef.current) {
-        // Remove existing routing control
-        if (routingControl) {
-          mapRef.current.removeControl(routingControl)
-        }
-
-        // Set color based on status
-        const routeColor = route.status === "Open" ? "green" : route.status === "Warning" ? "orange" : "red"
-
-        // Create new routing control with appropriate color
-        const newRoutingControl = calculateRoute(mapRef.current, route.startPoint, route.endPoint, routeColor)
-
-        setRoutingControl(newRoutingControl)
-      }
-    }
-  }
-
-  const handlePrintMap = () => {
-    window.print()
-  }
-
-  const handleDownloadMap = () => {
-    // In a real app, this would generate and download a map image
-    addAlert({
-      title: "Map Downloaded",
-      message: "The map has been downloaded to your device.",
-      type: "success",
-    })
-  }
-
-  // Filter routes based on search and district
-  const filteredRoutes = routes.filter((route) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      route.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      route.district.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const matchesDistrict = selectedDistrict === "All Districts" || route.district === selectedDistrict
-
-    return matchesSearch && matchesDistrict
-  })
-
-  // Handle map click for custom routing
-  const handleMapClick = (e: L.LeafletMouseEvent) => {
-    if (!customRoute.start) {
-      setCustomRoute({
-        start: [e.latlng.lat, e.latlng.lng],
-        end: null,
-      })
-
-      // Show notification
-      addAlert({
-        title: "Start Point Selected",
-        message: "Now click on the map to select your destination point.",
-        type: "info",
-      })
-    } else if (!customRoute.end) {
-      setCustomRoute({
-        ...customRoute,
-        end: [e.latlng.lat, e.latlng.lng],
-      })
-
-      // Calculate route
-      if (mapRef.current && customRoute.start) {
-        // Remove existing routing control
-        if (routingControl) {
-          mapRef.current.removeControl(routingControl)
-        }
-
-        // Create new routing control
-        const newRoutingControl = calculateRoute(
-          mapRef.current,
-          customRoute.start,
-          [e.latlng.lat, e.latlng.lng],
-          "blue",
-        )
-
-        setRoutingControl(newRoutingControl)
-
-        // Show notification
-        addAlert({
-          title: "Route Calculated",
-          message: "Your custom route has been calculated. You can click on the map again to create a new route.",
-          type: "success",
-        })
-      }
-    } else {
-      // Reset and start new route
-      setCustomRoute({
-        start: [e.latlng.lat, e.latlng.lng],
-        end: null,
-      })
-
-      // Show notification
-      addAlert({
-        title: "New Route Started",
-        message: "Now click on the map to select your destination point.",
-        type: "info",
-      })
-    }
-  }
-
-  // Calculate route between two points
+  /* ---------- Leaflet routing utility ---------- */
   const calculateRoute = (
     map: L.Map,
     start: [number, number],
     end: [number, number],
-    color = "blue",
+    color = String(theme.palette.primary.main)
   ): L.Routing.Control => {
-    // Create custom line style based on route color
     const createPlan = () =>
       L.Routing.plan([L.latLng(start), L.latLng(end)], {
-        createMarker: (i, waypoint, n) => {
-          const marker = L.marker(waypoint.latLng, {
+        createMarker: (i, waypoint) =>
+          L.marker(waypoint.latLng, {
             draggable: true,
             icon: L.icon({
               iconUrl:
                 i === 0
                   ? "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png"
                   : "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-              shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+              shadowUrl: iconShadowUrl,
               iconSize: [25, 41],
               iconAnchor: [12, 41],
-              popupAnchor: [1, -34],
-              shadowSize: [41, 41],
             }),
-          })
-          return marker
-        },
-      })
+          }),
+      });
 
-    // Create routing control with custom styling
     const routingControl = L.Routing.control({
       plan: createPlan(),
       lineOptions: {
         styles: [
-          { color: color, opacity: 0.8, weight: 6 },
-          { color: "white", opacity: 0.3, weight: 2 },
+          { color, opacity: 0.9, weight: 6 },
+          { color: "#ffffff", opacity: 0.3, weight: 2 },
         ],
         addWaypoints: false,
       },
@@ -808,237 +637,477 @@ export default function SafeRoutes() {
       collapsible: true,
       fitSelectedRoutes: true,
       showAlternatives: false,
-      altLineOptions: {
-        styles: [
-          { color: "black", opacity: 0.15, weight: 9 },
-          { color: "white", opacity: 0.8, weight: 6 },
-          { color: "blue", opacity: 0.5, weight: 2 },
-        ],
-      },
-    }).addTo(map)
+    }).addTo(map);
 
-    // Hide the routing instructions
-    const container = routingControl.getContainer()
-    if (container) {
-      container.style.display = "none"
-    }
+    const container = routingControl.getContainer();
+    if (container) container.style.display = "none";
+    return routingControl;
+  };
 
-    return routingControl
-  }
+  const generateMultipleRoutes = (
+    map: L.Map,
+    start: [number, number],
+    end: [number, number]
+  ) => {
+    if (riskRoutes.high) map.removeLayer(riskRoutes.high);
+    if (riskRoutes.medium) map.removeLayer(riskRoutes.medium);
+    if (riskRoutes.low) map.removeLayer(riskRoutes.low);
 
-  // Generate multiple route options with different risk levels
-  const generateMultipleRoutes = (map: L.Map, start: [number, number], end: [number, number]) => {
-    // Clear existing routes
-    if (riskRoutes.high) map.removeLayer(riskRoutes.high)
-    if (riskRoutes.medium) map.removeLayer(riskRoutes.medium)
-    if (riskRoutes.low) map.removeLayer(riskRoutes.low)
-
-    // Generate three different routes with varying risk levels
-    const routes = [
+    const routesDef = [
       {
         risk: "high",
-        color: "red",
-        waypoints: [start, [(start[0] + end[0]) / 2 + 0.05, (start[1] + end[1]) / 2 + 0.05], end],
+        color: String(theme.palette.error.main),
+        waypoints: [
+          start,
+          [(start[0] + end[0]) / 2 + 0.05, (start[1] + end[1]) / 2 + 0.05],
+          end,
+        ],
       },
       {
         risk: "medium",
-        color: "orange",
-        waypoints: [start, [(start[0] + end[0]) / 2 - 0.02, (start[1] + end[1]) / 2], end],
+        color: String(theme.palette.warning.main),
+        waypoints: [
+          start,
+          [(start[0] + end[0]) / 2 - 0.02, (start[1] + end[1]) / 2],
+          end,
+        ],
       },
       {
         risk: "low",
-        color: "green",
-        waypoints: [start, [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2 - 0.05], end],
+        color: String(theme.palette.success.main),
+        waypoints: [
+          start,
+          [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2 - 0.05],
+          end,
+        ],
       },
-    ]
+    ];
 
-    // Draw all routes with their respective colors
     const newRiskRoutes = {
       high: null as L.Polyline | null,
       medium: null as L.Polyline | null,
       low: null as L.Polyline | null,
+    };
+
+    routesDef.forEach((r) => {
+      const poly = L.polyline(r.waypoints as L.LatLngExpression[], {
+        color: r.color,
+        weight: r.risk === "high" ? 3 : r.risk === "medium" ? 4 : 5,
+        opacity: 0.85,
+        dashArray:
+          r.risk === "high" ? "6,8" : r.risk === "medium" ? "5,5" : undefined,
+      }).addTo(map);
+
+      poly.bindPopup(
+        `<b>${r.risk.charAt(0).toUpperCase() + r.risk.slice(1)} Risk Route</b>`
+      );
+      if (r.risk === "high") newRiskRoutes.high = poly;
+      if (r.risk === "medium") newRiskRoutes.medium = poly;
+      if (r.risk === "low") newRiskRoutes.low = poly;
+    });
+
+    setRiskRoutes(newRiskRoutes);
+    return newRiskRoutes;
+  };
+
+  /* ---------- Handlers ---------- */
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshData();
+    await loadMockData();
+    setTimeout(() => setRefreshing(false), 900);
+  };
+
+  const handleSendNotification = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!notificationMessage.trim()) return;
+    setSendingNotification(true);
+    try {
+      await sendEmergencyBroadcast(
+        notificationMessage,
+        selectedDistrict !== "All Districts" ? selectedDistrict : undefined
+      );
+      const newCommunication: Communication = {
+        id: `comm${communications.length + 1}`,
+        title: notificationMessage,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        recipients:
+          notificationRecipients === "All Recipients" ? "1,247" : "500",
+        status: "Delivered",
+      };
+      setCommunications([newCommunication, ...communications]);
+      setNotificationMessage("");
+      addAlert({
+        title: "Notification Sent",
+        message: `Your emergency notification has been sent to ${notificationRecipients}`,
+        type: "success",
+      });
+    } catch (err) {
+      console.error(err);
+      addAlert({
+        title: "Notification Failed",
+        message:
+          "There was an error sending your notification. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setSendingNotification(false);
     }
+  };
 
-    routes.forEach((route) => {
-      // Create polylines for each route with appropriate color
-      const polyline = L.polyline(route.waypoints as L.LatLngExpression[], {
-        color: route.color,
-        weight: route.risk === "high" ? 3 : route.risk === "medium" ? 4 : 5,
-        opacity: 0.8,
-        dashArray: route.risk === "high" ? "5, 10" : route.risk === "medium" ? "5, 5" : undefined,
-      }).addTo(map)
+  const handleViewRouteDetails = (routeId: string) => {
+    setShowRouteDetails(routeId);
+    const route = routes.find((r) => r.id === routeId);
+    if (!route) return;
 
-      // Add popup to show risk level when clicked
-      polyline.bindPopup(`<b>${route.risk.charAt(0).toUpperCase() + route.risk.slice(1)} Risk Route</b>`)
+    const center: [number, number] = [
+      (route.startPoint[0] + route.endPoint[0]) / 2,
+      (route.startPoint[1] + route.endPoint[1]) / 2,
+    ];
+    setMapCenter(center);
+    setMapZoom(12);
 
-      // Store the polyline reference
-      if (route.risk === "high") newRiskRoutes.high = polyline
-      else if (route.risk === "medium") newRiskRoutes.medium = polyline
-      else newRiskRoutes.low = polyline
-    })
+    if (mapRef.current) {
+      if (routingControl) mapRef.current.removeControl(routingControl);
+      const color =
+        route.status === "Open"
+          ? String(theme.palette.success.main)
+          : route.status === "Warning"
+          ? String(theme.palette.warning.main)
+          : String(theme.palette.error.main);
+      const rc = calculateRoute(
+        mapRef.current,
+        route.startPoint,
+        route.endPoint,
+        color
+      );
+      setRoutingControl(rc);
+    }
+  };
 
-    setRiskRoutes(newRiskRoutes)
-    return newRiskRoutes
-  }
+  const handlePrintMap = () => window.print();
+  const handleDownloadMap = () =>
+    addAlert({
+      title: "Map Downloaded",
+      message: "The map has been downloaded to your device.",
+      type: "success",
+    });
+
+  const handleMapClick = (e: L.LeafletMouseEvent) => {
+    if (!customRoute.start) {
+      setCustomRoute({ start: [e.latlng.lat, e.latlng.lng], end: null });
+      addAlert({
+        title: "Start Point Selected",
+        message: "Now click on the map to select your destination point.",
+        type: "info",
+      });
+    } else if (!customRoute.end) {
+      setCustomRoute((c) => ({ ...c, end: [e.latlng.lat, e.latlng.lng] }));
+      if (mapRef.current && customRoute.start) {
+        if (routingControl) mapRef.current.removeControl(routingControl);
+        const rc = calculateRoute(
+          mapRef.current,
+          customRoute.start,
+          [e.latlng.lat, e.latlng.lng],
+          String(theme.palette.primary.main)
+        );
+        setRoutingControl(rc);
+        addAlert({
+          title: "Route Calculated",
+          message: "Your custom route has been calculated.",
+          type: "success",
+        });
+      }
+    } else {
+      setCustomRoute({ start: [e.latlng.lat, e.latlng.lng], end: null });
+      addAlert({
+        title: "New Route Started",
+        message: "Now click on the map to select your destination point.",
+        type: "info",
+      });
+    }
+  };
 
   const calculateSafeRoute = (e: FormEvent) => {
-    e.preventDefault()
-
+    e.preventDefault();
     if (!fromLocation.trim() || !toLocation.trim()) {
       addAlert({
         title: "Missing Information",
         message: "Please enter both starting point and destination",
         type: "error",
-      })
-      return
+      });
+      return;
     }
 
-    // Find coordinates for the locations
-    const fromDistrict = tamilNaduDistricts.find((d) => d.name.toLowerCase().includes(fromLocation.toLowerCase()))
-    const toDistrict = tamilNaduDistricts.find((d) => d.name.toLowerCase().includes(toLocation.toLowerCase()))
-
-    if (fromDistrict && toDistrict) {
-      // Remove existing routing control
-      if (routingControl && mapRef.current) {
-        mapRef.current.removeControl(routingControl)
-      }
-
-      // Clear existing risk routes
-      if (mapRef.current) {
-        if (riskRoutes.high) mapRef.current.removeLayer(riskRoutes.high)
-        if (riskRoutes.medium) mapRef.current.removeLayer(riskRoutes.medium)
-        if (riskRoutes.low) mapRef.current.removeLayer(riskRoutes.low)
-      }
-
-      // Calculate shortest path using Dijkstra's algorithm
-      const pathCoordinates = findShortestPath(fromDistrict.name, toDistrict.name, avoidFloodZones)
-      setShortestPath(pathCoordinates)
-
-      if (mapRef.current && pathCoordinates.length > 0) {
-        // Draw the shortest path
-        const shortestPathPolyline = L.polyline(pathCoordinates, {
-          color: "blue",
-          weight: 5,
-          opacity: 0.8,
-          dashArray: undefined,
-        }).addTo(mapRef.current)
-
-        shortestPathPolyline.bindPopup("<b>Shortest Safe Route</b><br>Calculated using Dijkstra's algorithm")
-
-        // Also generate alternative routes with different risk levels for comparison
-        generateMultipleRoutes(mapRef.current, fromDistrict.coordinates, toDistrict.coordinates)
-
-        // Add markers for start and end points
-        const startMarker = L.marker(fromDistrict.coordinates, {
-          icon: L.icon({
-            iconUrl:
-              "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41],
-          }),
-        }).addTo(mapRef.current)
-
-        const endMarker = L.marker(toDistrict.coordinates, {
-          icon: L.icon({
-            iconUrl:
-              "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41],
-          }),
-        }).addTo(mapRef.current)
-
-        startMarker.bindPopup(`<b>Start: ${fromLocation}</b>`)
-        endMarker.bindPopup(`<b>Destination: ${toLocation}</b>`)
-
-        // Center map between the two points
-        const centerLat = (fromDistrict.coordinates[0] + toDistrict.coordinates[0]) / 2
-        const centerLng = (fromDistrict.coordinates[1] + toDistrict.coordinates[1]) / 2
-        setMapCenter([centerLat, centerLng])
-        setMapZoom(11)
-      }
-
-      setShowRouteRisk(true)
-
-      addAlert({
-        title: "Safe Route Calculated",
-        message: `Shortest safe route from ${fromLocation} to ${toLocation} calculated using Dijkstra's algorithm`,
-        type: "success",
-      })
-    } else {
+    const from = tamilNaduDistricts.find((d) =>
+      d.name.toLowerCase().includes(fromLocation.toLowerCase())
+    );
+    const to = tamilNaduDistricts.find((d) =>
+      d.name.toLowerCase().includes(toLocation.toLowerCase())
+    );
+    if (!from || !to) {
       addAlert({
         title: "Location Not Found",
-        message: "One or both locations could not be found. Try using district names in Tamil Nadu.",
+        message:
+          "One or both locations could not be found. Try using district names in Tamil Nadu.",
         type: "warning",
-      })
+      });
+      return;
     }
-  }
 
-  if (isLoading) {
-    return <LoadingSpinner fullScreen />
-  }
+    if (routingControl && mapRef.current)
+      mapRef.current.removeControl(routingControl);
+    if (mapRef.current) {
+      if (riskRoutes.high) mapRef.current.removeLayer(riskRoutes.high);
+      if (riskRoutes.medium) mapRef.current.removeLayer(riskRoutes.medium);
+      if (riskRoutes.low) mapRef.current.removeLayer(riskRoutes.low);
+    }
 
+    const pathCoords = findShortestPath(from.name, to.name, avoidFloodZones);
+    setShortestPath(pathCoords);
+
+    if (mapRef.current && pathCoords && pathCoords.length > 0) {
+      const line = L.polyline(pathCoords, {
+        color: String(theme.palette.primary.main),
+        weight: 5,
+        opacity: 0.85,
+      }).addTo(mapRef.current);
+      line.bindPopup(
+        "<b>Shortest Safe Route</b><br>Calculated using Dijkstra's algorithm"
+      );
+      generateMultipleRoutes(mapRef.current, from.coordinates, to.coordinates);
+
+      // Add markers and center
+      const startMarker = L.marker(from.coordinates, {
+        icon: L.icon({
+          iconUrl:
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+          shadowUrl: iconShadowUrl,
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        }),
+      }).addTo(mapRef.current);
+
+      const endMarker = L.marker(to.coordinates, {
+        icon: L.icon({
+          iconUrl:
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+          shadowUrl: iconShadowUrl,
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        }),
+      }).addTo(mapRef.current);
+
+      startMarker.bindPopup(`<b>Start: ${fromLocation}</b>`);
+      endMarker.bindPopup(`<b>Destination: ${toLocation}</b>`);
+
+      const centerLat = (from.coordinates[0] + to.coordinates[0]) / 2;
+      const centerLng = (from.coordinates[1] + to.coordinates[1]) / 2;
+      setMapCenter([centerLat, centerLng]);
+      setMapZoom(11);
+    }
+
+    setShowRouteRisk(true);
+    addAlert({
+      title: "Safe Route Calculated",
+      message: `Shortest safe route from ${fromLocation} to ${toLocation} calculated`,
+      type: "success",
+    });
+  };
+
+  if (isLoading) return <LoadingSpinner fullScreen />;
+
+  /* ---------- Theme colors helpers (do not alter layout) ---------- */
+  const panelBg = theme.palette.background.paper;
+  const pageBg = theme.palette.background.default;
+  const textPrimary = theme.palette.text.primary;
+  const textSecondary = theme.palette.text.secondary;
+  const subtleBorder = theme.palette.divider;
+
+  /* ---------- Filtered routes for list (keeps your layout) ---------- */
+  const filteredRoutes = routes.filter((route) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      route.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      route.district.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDistrict =
+      selectedDistrict === "All Districts" ||
+      route.district === selectedDistrict;
+    return matchesSearch && matchesDistrict;
+  });
+
+  /* ---------- Render (keeps your exact structure/alignment) ---------- */
   return (
-    <div className="p-4 md:p-6">
-      {/* Stats Grid */}
+    <div style={{ padding: 16 }}>
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {stats.map((stat, index) => (
-          <div key={index} className={`bg-white rounded-xl p-4 md:p-6 shadow-sm border ${stat.className}`}>
-            <div className="flex items-center justify-between">
+        {stats.map((s, i) => (
+          <div
+            key={i}
+            style={{
+              background: panelBg,
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: theme.shadows[1],
+              border: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <div>
-                <p className="text-gray-600 text-sm">{stat.title}</p>
-                <h3 className="text-2xl md:text-3xl font-bold mt-2">{stat.value}</h3>
+                <p style={{ color: textSecondary, fontSize: 13 }}>{s.title}</p>
+                <h3
+                  style={{
+                    color: textPrimary,
+                    fontSize: 22,
+                    fontWeight: 700,
+                    marginTop: 8,
+                  }}
+                >
+                  {s.value}
+                </h3>
               </div>
-              <div className="bg-gray-50 p-3 rounded-full">{stat.icon}</div>
+              <div
+                style={{
+                  background:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.04)"
+                      : "#f7fafc",
+                  padding: 12,
+                  borderRadius: 999,
+                }}
+              >
+                {s.icon}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Routes List and Map */}
+        {/* Left column (map + controls) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Map Controls */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-4 items-center justify-between">
-                <div className="flex gap-2">
+          {/* Map Controls card */}
+          <div
+            style={{
+              background: panelBg,
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: theme.shadows[1],
+              border: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div style={{ display: "flex", gap: 8 }}>
                   <button
-                    onClick={() => setMapType(mapType === "street" ? "satellite" : "street")}
-                    className={`px-4 py-2 rounded-lg ${
-                      mapType === "street" ? "bg-blue-50 text-blue-600" : "text-gray-600"
-                    }`}
+                    onClick={() =>
+                      setMapType(mapType === "street" ? "satellite" : "street")
+                    }
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: 8,
+                      border: "none",
+                      cursor: "pointer",
+                      background:
+                        mapType === "street"
+                          ? theme.palette.action.selected
+                          : "transparent",
+                      color:
+                        mapType === "street"
+                          ? theme.palette.primary.main
+                          : textPrimary,
+                    }}
                   >
                     {mapType === "street" ? "Street View" : "Satellite View"}
                   </button>
                 </div>
-                <div className="flex gap-2">
+
+                <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={handleRefresh}
-                    className={`p-2 text-gray-600 hover:bg-gray-100 rounded-lg ${refreshing ? "animate-spin" : ""}`}
                     disabled={refreshing}
+                    title="Refresh"
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      border: "none",
+                      background: "transparent",
+                      cursor: refreshing ? "default" : "pointer",
+                      color: textPrimary,
+                    }}
                   >
-                    <RefreshCw size={20} />
+                    {refreshing ? (
+                      <RefreshCw size={18} />
+                    ) : (
+                      <RefreshCw size={18} />
+                    )}
                   </button>
-                  <button onClick={handlePrintMap} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <Printer size={20} />
+                  <button
+                    onClick={handlePrintMap}
+                    title="Print"
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      border: "none",
+                      background: "transparent",
+                      color: textPrimary,
+                    }}
+                  >
+                    <Printer size={18} />
                   </button>
-                  <button onClick={handleDownloadMap} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <Download size={20} />
+                  <button
+                    onClick={handleDownloadMap}
+                    title="Download"
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      border: "none",
+                      background: "transparent",
+                      color: textPrimary,
+                    }}
+                  >
+                    <Download size={18} />
                   </button>
                 </div>
               </div>
 
-              {/* From/To Route Finder */}
-              <form onSubmit={calculateSafeRoute} className="border-t pt-4 mt-2">
+              {/* From/To form (alignment preserved) */}
+              <form
+                onSubmit={calculateSafeRoute}
+                style={{
+                  borderTop: `1px solid ${subtleBorder}`,
+                  paddingTop: 12,
+                  marginTop: 12,
+                }}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                   <div>
-                    <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="fromLocation"
+                      style={{
+                        display: "block",
+                        fontSize: 13,
+                        marginBottom: 6,
+                        color: textSecondary,
+                      }}
+                    >
                       From
                     </label>
                     <input
@@ -1047,11 +1116,29 @@ export default function SafeRoutes() {
                       value={fromLocation}
                       onChange={(e) => setFromLocation(e.target.value)}
                       placeholder="Enter starting point"
-                      className="w-full p-2 border rounded-lg"
+                      style={{
+                        width: "100%",
+                        padding: 8,
+                        borderRadius: 8,
+                        border: `1px solid ${subtleBorder}`,
+                        background:
+                          theme.palette.mode === "dark"
+                            ? theme.palette.background.default
+                            : "#fff",
+                        color: textPrimary,
+                      }}
                     />
                   </div>
                   <div>
-                    <label htmlFor="toLocation" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="toLocation"
+                      style={{
+                        display: "block",
+                        fontSize: 13,
+                        marginBottom: 6,
+                        color: textSecondary,
+                      }}
+                    >
                       To
                     </label>
                     <input
@@ -1060,67 +1147,180 @@ export default function SafeRoutes() {
                       value={toLocation}
                       onChange={(e) => setToLocation(e.target.value)}
                       placeholder="Enter destination"
-                      className="w-full p-2 border rounded-lg"
+                      style={{
+                        width: "100%",
+                        padding: 8,
+                        borderRadius: 8,
+                        border: `1px solid ${subtleBorder}`,
+                        background:
+                          theme.palette.mode === "dark"
+                            ? theme.palette.background.default
+                            : "#fff",
+                        color: textPrimary,
+                      }}
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mb-3">
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 12,
+                  }}
+                >
                   <input
                     id="avoidFloodZones"
                     type="checkbox"
                     checked={avoidFloodZones}
                     onChange={(e) => setAvoidFloodZones(e.target.checked)}
-                    className="rounded"
                   />
-                  <label htmlFor="avoidFloodZones" className="text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="avoidFloodZones"
+                    style={{ fontSize: 14, color: textPrimary }}
+                  >
                     Avoid flood-affected areas
                   </label>
                 </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 12 }}
+                  >
                     {showRouteRisk && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Risk Level:</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
                         <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            routeRiskLevel === "high"
-                              ? "bg-red-100 text-red-600"
-                              : routeRiskLevel === "medium"
-                                ? "bg-orange-100 text-orange-600"
-                                : "bg-green-100 text-green-600"
-                          }`}
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: textPrimary,
+                          }}
+                        >
+                          Risk Level:
+                        </span>
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: 999,
+                            fontSize: 12,
+                            background:
+                              routeRiskLevel === "high"
+                                ? theme.palette.error.light
+                                : routeRiskLevel === "medium"
+                                ? theme.palette.warning.light
+                                : theme.palette.success.light,
+                            color:
+                              routeRiskLevel === "high"
+                                ? theme.palette.error.dark
+                                : routeRiskLevel === "medium"
+                                ? theme.palette.warning.dark
+                                : theme.palette.success.dark,
+                          }}
                         >
                           {routeRiskLevel === "high"
                             ? "High Risk"
                             : routeRiskLevel === "medium"
-                              ? "Medium Risk"
-                              : "Low Risk"}
+                            ? "Medium Risk"
+                            : routeRiskLevel === "low"
+                            ? "Low Risk"
+                            : "—"}
                         </span>
                       </div>
                     )}
                   </div>
-                  <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+
+                  <button
+                    type="submit"
+                    style={{
+                      background: theme.palette.primary.main,
+                      color: theme.palette.primary.contrastText,
+                      padding: "8px 14px",
+                      borderRadius: 8,
+                      border: "none",
+                    }}
+                  >
                     Find Safe Route
                   </button>
                 </div>
               </form>
 
-              {/* Risk Level Legend */}
+              {/* Legend */}
               {showRouteRisk && (
-                <div className="border-t pt-3 mt-3">
-                  <p className="text-sm font-medium mb-2">Route Risk Levels:</p>
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-1">
-                      <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                      <span className="text-xs font-medium">High Risk - Avoid</span>
+                <div
+                  style={{
+                    borderTop: `1px solid ${subtleBorder}`,
+                    paddingTop: 12,
+                    marginTop: 12,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      marginBottom: 8,
+                      color: textPrimary,
+                    }}
+                  >
+                    Route Risk Levels:
+                  </p>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <div
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          background: theme.palette.error.main,
+                        }}
+                      />
+                      <span style={{ fontSize: 13, color: textPrimary }}>
+                        High Risk - Avoid
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-                      <span className="text-xs font-medium">Medium Risk - Caution</span>
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <div
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          background: theme.palette.warning.main,
+                        }}
+                      />
+                      <span style={{ fontSize: 13, color: textPrimary }}>
+                        Medium Risk - Caution
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                      <span className="text-xs font-medium">Low Risk - Safe</span>
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <div
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          background: theme.palette.success.main,
+                        }}
+                      />
+                      <span style={{ fontSize: 13, color: textPrimary }}>
+                        Low Risk - Safe
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1128,100 +1328,120 @@ export default function SafeRoutes() {
             </div>
           </div>
 
-          {/* Map Area */}
-          <div className="bg-gray-100 h-[500px] rounded-lg relative overflow-hidden">
+          {/* Map container */}
+          <div
+            style={{
+              background: theme.palette.mode === "dark" ? "#0b1220" : "#f5f7fb",
+              height: fullScreenMap ? "80vh" : 500,
+              borderRadius: 12,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
               style={{ height: "100%", width: "100%" }}
               zoomControl={false}
               whenCreated={(map) => {
-                mapRef.current = map
-                map.on("click", handleMapClick)
+                mapRef.current = map;
+                map.on("click", handleMapClick);
               }}
             >
               <ChangeView center={mapCenter} zoom={mapZoom} />
 
-              {/* Base map layer */}
               {mapType === "street" ? (
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  attribution="&copy; OpenStreetMap contributors"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
               ) : (
                 <TileLayer
-                  attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                  attribution="&copy; Esri"
                   url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                 />
               )}
 
-              {/* Flood zones */}
               {showFloodZones &&
                 floodZones.map((zone) => (
                   <Polygon
                     key={zone.id}
                     positions={zone.coordinates}
                     pathOptions={{
-                      color: zone.riskLevel === "high" ? "red" : zone.riskLevel === "medium" ? "orange" : "yellow",
-                      fillColor: zone.riskLevel === "high" ? "red" : zone.riskLevel === "medium" ? "orange" : "yellow",
-                      fillOpacity: 0.3,
+                      color:
+                        zone.riskLevel === "high"
+                          ? String(theme.palette.error.main)
+                          : zone.riskLevel === "medium"
+                          ? String(theme.palette.warning.main)
+                          : String(theme.palette.warning.light),
+                      fillColor:
+                        zone.riskLevel === "high"
+                          ? String(theme.palette.error.main)
+                          : zone.riskLevel === "medium"
+                          ? String(theme.palette.warning.main)
+                          : String(theme.palette.warning.light),
+                      fillOpacity: 0.28,
                       weight: 2,
                     }}
                   >
                     <Popup>
-                      <div className="p-2">
-                        <h3 className="font-medium">{zone.name}</h3>
-                        <p className="text-sm text-gray-600">
-                          Risk Level: {zone.riskLevel.charAt(0).toUpperCase() + zone.riskLevel.slice(1)}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {zone.riskLevel === "high"
-                            ? "Avoid this area - severe flooding"
-                            : zone.riskLevel === "medium"
-                              ? "Proceed with caution - moderate flooding"
-                              : "Minor flooding - safe for most vehicles"}
+                      <div style={{ padding: 8 }}>
+                        <h3 style={{ margin: 0 }}>{zone.name}</h3>
+                        <p
+                          style={{ margin: "6px 0 0 0", color: textSecondary }}
+                        >
+                          Risk Level: {zone.riskLevel}
                         </p>
                       </div>
                     </Popup>
                   </Polygon>
                 ))}
 
-              {/* Shortest path from Dijkstra's algorithm */}
-              {showShortestPath && shortestPath && shortestPath.length > 1 && (
+              {showShortestPath && shortestPath && shortestPath.length > 0 && (
                 <Polyline
                   positions={shortestPath}
                   pathOptions={{
-                    color: "blue",
+                    color: String(theme.palette.primary.main),
                     weight: 5,
-                    opacity: 0.8,
+                    opacity: 0.85,
                   }}
                 >
                   <Popup>
-                    <div className="p-2">
-                      <h3 className="font-medium">Shortest Safe Route</h3>
-                      <p className="text-sm text-gray-600">Calculated using Dijkstra's algorithm</p>
-                      <p className="text-sm text-gray-500">
-                        {avoidFloodZones
-                          ? "Avoiding flood-affected areas"
-                          : "Warning: This route may pass through flood zones"}
+                    <div style={{ padding: 8 }}>
+                      <h3 style={{ margin: 0 }}>Shortest Safe Route</h3>
+                      <p style={{ marginTop: 6, color: textSecondary }}>
+                        Calculated using Dijkstra's algorithm
                       </p>
                     </div>
                   </Popup>
                 </Polyline>
               )}
 
-              {/* Route markers and lines */}
-              {filteredRoutes.map((route) => (
-                <div key={route.id}>
+              {routes.map((route) => (
+                <React.Fragment key={route.id}>
                   <Marker position={route.startPoint}>
                     <Popup>
-                      <div className="p-2">
-                        <h3 className="font-medium">Start: {route.name}</h3>
-                        <p className="text-sm text-gray-600">Status: {route.status}</p>
-                        <p className="text-sm text-gray-500">Updated: {route.updated}</p>
+                      <div style={{ padding: 8 }}>
+                        <h3 style={{ margin: 0 }}>{route.name}</h3>
+                        <p
+                          style={{ margin: "6px 0 0 0", color: textSecondary }}
+                        >
+                          Status: {route.status}
+                        </p>
+                        <p
+                          style={{ margin: "6px 0 0 0", color: textSecondary }}
+                        >
+                          Updated: {route.updated}
+                        </p>
                         <button
                           onClick={() => handleViewRouteDetails(route.id)}
-                          className="mt-2 text-blue-500 text-sm hover:underline"
+                          style={{
+                            marginTop: 8,
+                            color: theme.palette.primary.main,
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
                         >
                           View Route Details
                         </button>
@@ -1231,9 +1451,11 @@ export default function SafeRoutes() {
 
                   <Marker position={route.endPoint}>
                     <Popup>
-                      <div className="p-2">
-                        <h3 className="font-medium">End: {route.name}</h3>
-                        <p className="text-sm text-gray-600">Status: {route.status}</p>
+                      <div style={{ padding: 8 }}>
+                        <h3 style={{ margin: 0 }}>End: {route.name}</h3>
+                        <p style={{ marginTop: 6, color: textSecondary }}>
+                          Status: {route.status}
+                        </p>
                       </div>
                     </Popup>
                   </Marker>
@@ -1242,17 +1464,22 @@ export default function SafeRoutes() {
                     <Polyline
                       positions={[route.startPoint, route.endPoint]}
                       pathOptions={{
-                        color: route.status === "Open" ? "green" : route.status === "Warning" ? "orange" : "red",
+                        color:
+                          route.status === "Open"
+                            ? String(theme.palette.success.main)
+                            : route.status === "Warning"
+                            ? String(theme.palette.warning.main)
+                            : String(theme.palette.error.main),
                         weight: 3,
                         opacity: route.status === "Closed" ? 0.5 : 1,
-                        dashArray: route.status === "Warning" ? "10, 10" : undefined,
+                        dashArray:
+                          route.status === "Warning" ? "10,10" : undefined,
                       }}
                     />
                   )}
-                </div>
+                </React.Fragment>
               ))}
 
-              {/* User location marker */}
               {userLocation && (
                 <Marker
                   position={[userLocation.lat, userLocation.lng]}
@@ -1260,23 +1487,14 @@ export default function SafeRoutes() {
                     new L.Icon({
                       iconUrl:
                         "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-                      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+                      shadowUrl: iconShadowUrl,
                       iconSize: [25, 41],
                       iconAnchor: [12, 41],
-                      popupAnchor: [1, -34],
-                      shadowSize: [41, 41],
                     })
                   }
-                >
-                  <Popup>
-                    <div className="p-1">
-                      <p className="font-medium">Your Location</p>
-                    </div>
-                  </Popup>
-                </Marker>
+                />
               )}
 
-              {/* Custom route markers */}
               {customRoute.start && (
                 <Marker
                   position={customRoute.start}
@@ -1284,20 +1502,11 @@ export default function SafeRoutes() {
                     new L.Icon({
                       iconUrl:
                         "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-                      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+                      shadowUrl: iconShadowUrl,
                       iconSize: [25, 41],
-                      iconAnchor: [12, 41],
-                      popupAnchor: [1, -34],
-                      shadowSize: [41, 41],
                     })
                   }
-                >
-                  <Popup>
-                    <div className="p-1">
-                      <p className="font-medium">Start Point</p>
-                    </div>
-                  </Popup>
-                </Marker>
+                />
               )}
 
               {customRoute.end && (
@@ -1307,93 +1516,159 @@ export default function SafeRoutes() {
                     new L.Icon({
                       iconUrl:
                         "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-                      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+                      shadowUrl: iconShadowUrl,
                       iconSize: [25, 41],
-                      iconAnchor: [12, 41],
-                      popupAnchor: [1, -34],
-                      shadowSize: [41, 41],
                     })
                   }
-                >
-                  <Popup>
-                    <div className="p-1">
-                      <p className="font-medium">End Point</p>
-                    </div>
-                  </Popup>
-                </Marker>
+                />
               )}
             </MapContainer>
 
-            {/* Map Controls */}
-            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+            {/* Map controls overlay */}
+            <div
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 1000,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
               <button
-                onClick={() => setFullScreenMap(!fullScreenMap)}
-                className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-100"
+                onClick={() => setFullScreenMap((s) => !s)}
                 title={fullScreenMap ? "Exit Full Screen" : "Full Screen"}
+                style={{
+                  background: panelBg,
+                  padding: 8,
+                  borderRadius: 8,
+                  border: `1px solid ${subtleBorder}`,
+                  cursor: "pointer",
+                }}
               >
-                {fullScreenMap ? <X size={20} /> : <MapIcon size={20} />}
+                {fullScreenMap ? <X size={18} /> : <MapIcon size={18} />}
               </button>
-
               <button
-                onClick={() => setShowLayers(!showLayers)}
-                className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-100"
+                onClick={() => setShowLayers((s) => !s)}
                 title="Map Layers"
+                style={{
+                  background: panelBg,
+                  padding: 8,
+                  borderRadius: 8,
+                  border: `1px solid ${subtleBorder}`,
+                  cursor: "pointer",
+                }}
               >
-                <Layers size={20} />
+                <Layers size={18} />
               </button>
-
               {userLocation && (
                 <button
                   onClick={() => {
-                    setMapCenter([userLocation.lat, userLocation.lng])
-                    setMapZoom(15)
+                    setMapCenter([userLocation.lat, userLocation.lng]);
+                    setMapZoom(15);
                   }}
-                  className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-100"
                   title="Go to My Location"
+                  style={{
+                    background: panelBg,
+                    padding: 8,
+                    borderRadius: 8,
+                    border: `1px solid ${subtleBorder}`,
+                    cursor: "pointer",
+                  }}
                 >
-                  <MapPin size={20} />
+                  <MapPin size={18} />
                 </button>
               )}
             </div>
 
-            {/* Map Layers Panel */}
+            {/* Layers panel */}
             {showLayers && (
-              <div className="absolute top-4 left-4 z-10 bg-white p-3 rounded-lg shadow-md">
-                <h3 className="font-medium mb-2">Map Layers</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
+              <div
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  left: 12,
+                  zIndex: 1000,
+                  background: panelBg,
+                  padding: 12,
+                  borderRadius: 8,
+                  boxShadow: theme.shadows[6],
+                  border: `1px solid ${subtleBorder}`,
+                }}
+              >
+                <h3 style={{ margin: 0, fontWeight: 700, color: textPrimary }}>
+                  Map Layers
+                </h3>
+                <div
+                  style={{
+                    marginTop: 8,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: textPrimary,
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={showFloodZones}
-                      onChange={() => setShowFloodZones(!showFloodZones)}
-                      className="rounded"
+                      onChange={() => setShowFloodZones((s) => !s)}
                     />
                     <span>Flood Zones</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: textPrimary,
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={showShelters}
-                      onChange={() => setShowShelters(!showShelters)}
-                      className="rounded"
+                      onChange={() => setShowShelters((s) => !s)}
                     />
                     <span>Shelters</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: textPrimary,
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={showRoads}
-                      onChange={() => setShowRoads(!showRoads)}
-                      className="rounded"
+                      onChange={() => setShowRoads((s) => !s)}
                     />
                     <span>Safe Routes</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: textPrimary,
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={showShortestPath}
-                      onChange={() => setShowShortestPath(!showShortestPath)}
-                      className="rounded"
+                      onChange={() => setShowShortestPath((s) => !s)}
                     />
                     <span>Shortest Path</span>
                   </label>
@@ -1401,84 +1676,197 @@ export default function SafeRoutes() {
               </div>
             )}
 
-            {/* Map Instructions */}
-            <div className="absolute bottom-4 left-4 z-10 bg-white p-3 rounded-lg shadow-md max-w-xs">
-              <h3 className="font-medium mb-1">Create Custom Route</h3>
-              <p className="text-sm text-gray-600">
+            {/* Map instructions */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: 12,
+                left: 12,
+                zIndex: 1000,
+                background: panelBg,
+                padding: 12,
+                borderRadius: 8,
+                boxShadow: theme.shadows[6],
+                border: `1px solid ${subtleBorder}`,
+                maxWidth: 320,
+              }}
+            >
+              <h3 style={{ margin: 0, fontWeight: 700, color: textPrimary }}>
+                Create Custom Route
+              </h3>
+              <p style={{ color: textSecondary, marginTop: 8 }}>
                 {!customRoute.start
                   ? "Click on the map to set your starting point"
                   : !customRoute.end
-                    ? "Now click to set your destination"
-                    : "Route created! Click again to start a new route"}
+                  ? "Now click to set your destination"
+                  : "Route created! Click again to start a new route"}
               </p>
             </div>
           </div>
 
-          {/* Active Routes */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Active Routes</h2>
-              <div className="flex items-center gap-2">
-                <div className="relative w-64">
+          {/* Active Routes list (keeps layout) */}
+          <div
+            style={{
+              background: panelBg,
+              borderRadius: 12,
+              boxShadow: theme.shadows[1],
+              overflow: "hidden",
+              border: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <div
+              style={{
+                padding: 12,
+                borderBottom: `1px solid ${subtleBorder}`,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: textPrimary,
+                }}
+              >
+                Active Routes
+              </h2>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ position: "relative" }}>
                   <input
                     type="text"
                     placeholder="Search routes..."
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width: 256,
+                      padding: "8px 12px 8px 36px",
+                      borderRadius: 8,
+                      border: `1px solid ${subtleBorder}`,
+                      background:
+                        theme.palette.mode === "dark"
+                          ? theme.palette.background.default
+                          : "#fff",
+                      color: textPrimary,
+                    }}
                   />
-                  <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                  <Search
+                    size={16}
+                    style={{
+                      position: "absolute",
+                      left: 10,
+                      top: 10,
+                      color: textSecondary,
+                    }}
+                  />
                 </div>
+
                 <select
-                  className="p-2 border rounded-lg"
                   value={selectedDistrict}
                   onChange={(e) => {
-                    setSelectedDistrict(e.target.value)
-                    // If a specific district is selected, find its coordinates and center the map
+                    setSelectedDistrict(e.target.value);
                     if (e.target.value !== "All Districts") {
-                      const district = tamilNaduDistricts.find((d) => d.name === e.target.value)
-                      if (district) {
-                        setMapCenter(district.coordinates)
-                        setMapZoom(11)
+                      const d = tamilNaduDistricts.find(
+                        (x) => x.name === e.target.value
+                      );
+                      if (d) {
+                        setMapCenter(d.coordinates);
+                        setMapZoom(11);
                       }
                     } else {
-                      // Reset to Tamil Nadu center
-                      setMapCenter([11.1271, 78.6569])
-                      setMapZoom(7)
+                      setMapCenter([11.1271, 78.6569]);
+                      setMapZoom(7);
                     }
+                  }}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: `1px solid ${subtleBorder}`,
+                    background:
+                      theme.palette.mode === "dark"
+                        ? theme.palette.background.default
+                        : "#fff",
+                    color: textPrimary,
                   }}
                 >
                   <option>All Districts</option>
-                  {tamilNaduDistricts.map((district) => (
-                    <option key={district.name}>{district.name}</option>
+                  {tamilNaduDistricts.map((d) => (
+                    <option key={d.name}>{d.name}</option>
                   ))}
                 </select>
               </div>
             </div>
-            <div className="divide-y max-h-[300px] overflow-y-auto">
+
+            <div style={{ maxHeight: 300, overflowY: "auto" }}>
               {filteredRoutes.length > 0 ? (
                 filteredRoutes.map((route) => (
-                  <div key={route.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                  <div
+                    key={route.id}
+                    style={{
+                      padding: 12,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      borderBottom: `1px solid ${subtleBorder}`,
+                      background: panelBg,
+                    }}
+                  >
                     <div>
-                      <h3 className="font-medium">{route.name}</h3>
-                      <p className="text-sm text-gray-500">Updated {route.updated}</p>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontWeight: 700,
+                          color: textPrimary,
+                        }}
+                      >
+                        {route.name}
+                      </h3>
+                      <p style={{ margin: 0, color: textSecondary }}>
+                        Updated {route.updated}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className={`font-medium ${route.statusColor}`}>{route.status}</span>
-                      <div className="flex gap-2">
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 12 }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          color:
+                            route.status === "Open"
+                              ? String(theme.palette.success.main)
+                              : route.status === "Warning"
+                              ? String(theme.palette.warning.main)
+                              : String(theme.palette.error.main),
+                        }}
+                      >
+                        {route.status}
+                      </span>
+                      <div style={{ display: "flex", gap: 8 }}>
                         <button
                           onClick={() => handleViewRouteDetails(route.id)}
-                          className="p-1 text-gray-400 hover:text-gray-600"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            color: textSecondary,
+                          }}
                           title="View Details"
                         >
                           <Info size={18} />
                         </button>
                         <button
                           onClick={() => {
-                            setMapCenter(route.startPoint)
-                            setMapZoom(14)
+                            setMapCenter(route.startPoint);
+                            setMapZoom(14);
                           }}
-                          className="p-1 text-gray-400 hover:text-gray-600"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            color: textSecondary,
+                          }}
                           title="Navigate"
                         >
                           <Navigation size={18} />
@@ -1488,39 +1876,107 @@ export default function SafeRoutes() {
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-gray-500">No routes match your search criteria</div>
+                <div
+                  style={{
+                    padding: 12,
+                    textAlign: "center",
+                    color: textSecondary,
+                  }}
+                >
+                  No routes match your search criteria
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right Column - Updates and Communications */}
+        {/* Right column (notifications, updates, communications) */}
         <div className="space-y-6">
-          {/* Push Notifications */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <h2 className="text-xl font-semibold mb-4">Push Notifications</h2>
-            <form onSubmit={handleSendNotification} className="space-y-4">
+          {/* Push notifications */}
+          <div
+            style={{
+              background: panelBg,
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: theme.shadows[1],
+              border: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 700,
+                color: textPrimary,
+              }}
+            >
+              Push Notifications
+            </h2>
+            <form
+              onSubmit={handleSendNotification}
+              style={{
+                marginTop: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
               <textarea
                 value={notificationMessage}
                 onChange={(e) => setNotificationMessage(e.target.value)}
                 placeholder="Enter notification message..."
-                className="w-full p-3 border rounded-lg h-32"
                 required
+                style={{
+                  width: "100%",
+                  minHeight: 140,
+                  padding: 12,
+                  borderRadius: 8,
+                  border: `1px solid ${subtleBorder}`,
+                  background:
+                    theme.palette.mode === "dark"
+                      ? theme.palette.background.default
+                      : "#fff",
+                  color: textPrimary,
+                }}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 8,
+                }}
+              >
                 <select
-                  className="p-2 border rounded-lg"
                   value={notificationRecipients}
                   onChange={(e) => setNotificationRecipients(e.target.value)}
+                  style={{
+                    padding: 8,
+                    borderRadius: 8,
+                    border: `1px solid ${subtleBorder}`,
+                    background:
+                      theme.palette.mode === "dark"
+                        ? theme.palette.background.default
+                        : "#fff",
+                    color: textPrimary,
+                  }}
                 >
                   <option>All Recipients</option>
                   <option>Affected Areas Only</option>
                   <option>Emergency Personnel</option>
                 </select>
                 <select
-                  className="p-2 border rounded-lg"
                   value={notificationPriority}
-                  onChange={(e) => setNotificationPriority(e.target.value as any)}
+                  onChange={(e) => setNotificationPriority(e.target.value)}
+                  style={{
+                    padding: 8,
+                    borderRadius: 8,
+                    border: `1px solid ${subtleBorder}`,
+                    background:
+                      theme.palette.mode === "dark"
+                        ? theme.palette.background.default
+                        : "#fff",
+                    color: textPrimary,
+                  }}
                 >
                   <option>High Priority</option>
                   <option>Medium Priority</option>
@@ -1529,64 +1985,147 @@ export default function SafeRoutes() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-blue-500 text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-600 disabled:opacity-50"
                 disabled={!notificationMessage.trim() || sendingNotification}
+                style={{
+                  background: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
-                {sendingNotification ? (
-                  <>
-                    <LoadingSpinner size="sm" color="white" />
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send size={20} />
-                    <span>Send Notification</span>
-                  </>
-                )}
+                {sendingNotification ? "Sending..." : "Send Notification"}
               </button>
             </form>
           </div>
 
           {/* Recent Updates */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <h2 className="text-xl font-semibold mb-4">Recent Updates</h2>
-            <div className="space-y-4">
-              {updates.map((update) => (
-                <div key={update.id} className="border-l-4 border-l-blue-500 pl-4 py-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{update.title}</h3>
-                      <p className="text-sm text-gray-500">{update.description}</p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        update.severity === "High"
-                          ? "bg-red-100 text-red-600"
-                          : update.severity === "Medium"
-                            ? "bg-orange-100 text-orange-600"
-                            : "bg-green-100 text-green-600"
-                      }`}
+          <div
+            style={{
+              background: panelBg,
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: theme.shadows[1],
+              border: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 700,
+                color: textPrimary,
+              }}
+            >
+              Recent Updates
+            </h2>
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
+              {updates.map((u) => (
+                <div
+                  key={u.id}
+                  style={{
+                    borderLeft: `4px solid ${
+                      u.severity === "High"
+                        ? theme.palette.error.main
+                        : u.severity === "Medium"
+                        ? theme.palette.warning.main
+                        : theme.palette.success.main
+                    }`,
+                    paddingLeft: 12,
+                    paddingTop: 8,
+                    paddingBottom: 8,
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <h3
+                      style={{ margin: 0, fontWeight: 700, color: textPrimary }}
                     >
-                      {update.severity}
-                    </span>
+                      {u.title}
+                    </h3>
+                    <span style={{ fontWeight: 700 }}>{u.severity}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">{update.time}</p>
+                  <p style={{ margin: "6px 0 0 0", color: textSecondary }}>
+                    {u.description}
+                  </p>
+                  <p style={{ margin: 0, color: textSecondary, fontSize: 12 }}>
+                    {u.time}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Recent Communications */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <h2 className="text-xl font-semibold mb-4">Recent Communications</h2>
-            <div className="space-y-4">
-              {communications.map((comm, index) => (
-                <div key={comm.id} className="border-t pt-4 first:border-t-0 first:pt-0">
-                  <h3 className="font-medium">{comm.title}</h3>
-                  <div className="flex justify-between items-center mt-2 text-sm text-gray-500">
+          <div
+            style={{
+              background: panelBg,
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: theme.shadows[1],
+              border: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 700,
+                color: textPrimary,
+              }}
+            >
+              Recent Communications
+            </h2>
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
+              {communications.map((comm) => (
+                <div
+                  key={comm.id}
+                  style={{
+                    borderTop: `1px solid ${subtleBorder}`,
+                    paddingTop: 8,
+                  }}
+                >
+                  <h3
+                    style={{ margin: 0, fontWeight: 700, color: textPrimary }}
+                  >
+                    {comm.title}
+                  </h3>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      color: textSecondary,
+                      marginTop: 6,
+                    }}
+                  >
                     <span>{comm.time}</span>
                     <span>{comm.recipients} recipients</span>
-                    <span className="text-green-500">{comm.status}</span>
+                    <span
+                      style={{
+                        color:
+                          comm.status === "Delivered"
+                            ? theme.palette.success.main
+                            : theme.palette.warning.main,
+                      }}
+                    >
+                      {comm.status}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -1595,94 +2134,193 @@ export default function SafeRoutes() {
         </div>
       </div>
 
-      {/* Route Details Modal */}
+      {/* Route details modal (preserves your layout) */}
       {showRouteDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Route Details</h3>
-              <button onClick={() => setShowRouteDetails(null)} className="p-1 rounded-full hover:bg-gray-100">
-                <X size={20} />
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1400,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.45)",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: panelBg,
+              borderRadius: 12,
+              padding: 20,
+              width: "min(900px, 95%)",
+              boxShadow: theme.shadows[12],
+              border: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <h3 style={{ margin: 0, fontWeight: 700, color: textPrimary }}>
+                Route Details
+              </h3>
+              <button
+                onClick={() => setShowRouteDetails(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: textPrimary,
+                }}
+              >
+                <X size={18} />
               </button>
             </div>
 
             {routes.find((r) => r.id === showRouteDetails) && (
-              <div className="space-y-4">
+              <div
+                style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}
+              >
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500">Route Name</h4>
-                  <p className="font-medium">{routes.find((r) => r.id === showRouteDetails)?.name}</p>
+                  <h4 style={{ margin: 0, fontSize: 13, color: textSecondary }}>
+                    Route Name
+                  </h4>
+                  <p
+                    style={{
+                      marginTop: 6,
+                      fontWeight: 700,
+                      color: textPrimary,
+                    }}
+                  >
+                    {routes.find((r) => r.id === showRouteDetails)?.name}
+                  </p>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500">District</h4>
-                  <p>{routes.find((r) => r.id === showRouteDetails)?.district}</p>
+                  <h4 style={{ margin: 0, fontSize: 13, color: textSecondary }}>
+                    District
+                  </h4>
+                  <p style={{ marginTop: 6, color: textPrimary }}>
+                    {routes.find((r) => r.id === showRouteDetails)?.district}
+                  </p>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500">Status</h4>
-                  <p className={routes.find((r) => r.id === showRouteDetails)?.statusColor}>
+                  <h4 style={{ margin: 0, fontSize: 13, color: textSecondary }}>
+                    Status
+                  </h4>
+                  <p
+                    style={{
+                      marginTop: 6,
+                      color:
+                        routes.find((r) => r.id === showRouteDetails)
+                          ?.status === "Open"
+                          ? String(theme.palette.success.main)
+                          : routes.find((r) => r.id === showRouteDetails)
+                              ?.status === "Warning"
+                          ? String(theme.palette.warning.main)
+                          : String(theme.palette.error.main),
+                    }}
+                  >
                     {routes.find((r) => r.id === showRouteDetails)?.status}
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500">Last Updated</h4>
-                  <p>{routes.find((r) => r.id === showRouteDetails)?.updated}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Traffic Conditions</h4>
-                  <p>
-                    {routes.find((r) => r.id === showRouteDetails)?.status === "Open"
-                      ? "Clear traffic, route is fully operational"
-                      : routes.find((r) => r.id === showRouteDetails)?.status === "Warning"
-                        ? "Heavy traffic, expect delays"
-                        : "Route closed due to flooding"}
+                  <h4 style={{ margin: 0, fontSize: 13, color: textSecondary }}>
+                    Last Updated
+                  </h4>
+                  <p style={{ marginTop: 6, color: textPrimary }}>
+                    {routes.find((r) => r.id === showRouteDetails)?.updated}
                   </p>
                 </div>
 
-                <div className="pt-4 flex justify-end gap-2">
+                <div>
+                  <h4 style={{ margin: 0, fontSize: 13, color: textSecondary }}>
+                    Traffic Conditions
+                  </h4>
+                  <p style={{ marginTop: 6, color: textPrimary }}>
+                    {routes.find((r) => r.id === showRouteDetails)?.status ===
+                    "Open"
+                      ? "Clear traffic, route is fully operational"
+                      : routes.find((r) => r.id === showRouteDetails)
+                          ?.status === "Warning"
+                      ? "Heavy traffic, expect delays"
+                      : "Route closed due to flooding"}
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 8,
+                    marginTop: 8,
+                  }}
+                >
                   <button
                     onClick={() => {
-                      // Share route information
-                      const route = routes.find((r) => r.id === showRouteDetails)
-                      if (route) {
+                      const route = routes.find(
+                        (r) => r.id === showRouteDetails
+                      );
+                      if (route)
                         addAlert({
                           title: "Route Shared",
                           message: `You've shared information about ${route.name}`,
                           type: "info",
-                        })
-                      }
-                      setShowRouteDetails(null)
+                        });
+                      setShowRouteDetails(null);
                     }}
-                    className="px-4 py-2 border rounded-lg"
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${subtleBorder}`,
+                      background: "transparent",
+                      color: textPrimary,
+                    }}
                   >
                     Share
                   </button>
                   <button
                     onClick={() => {
-                      // Navigate to route
-                      const route = routes.find((r) => r.id === showRouteDetails)
+                      const route = routes.find(
+                        (r) => r.id === showRouteDetails
+                      );
                       if (route) {
-                        setMapCenter(route.startPoint)
-                        setMapZoom(14)
-
-                        // Add to recent updates
+                        setMapCenter(route.startPoint);
+                        setMapZoom(14);
                         const newUpdate: Update = {
                           id: `update${updates.length + 1}`,
-                          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                          time: new Date().toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }),
                           title: `Navigation to ${route.name}`,
                           description: `Navigation started to ${route.district} via ${route.name}`,
                           severity: "Low",
-                        }
-                        setUpdates([newUpdate, ...updates])
+                        };
+                        setUpdates([newUpdate, ...updates]);
                       }
-                      setShowRouteDetails(null)
+                      setShowRouteDetails(null);
                     }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center gap-2"
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: "none",
+                      background: theme.palette.primary.main,
+                      color: theme.palette.primary.contrastText,
+                    }}
                   >
-                    <Navigation size={16} />
-                    <span>Navigate</span>
+                    <Navigation
+                      size={16}
+                      style={{ verticalAlign: "middle", marginRight: 6 }}
+                    />
+                    Navigate
                   </button>
                 </div>
               </div>
@@ -1691,6 +2329,5 @@ export default function SafeRoutes() {
         </div>
       )}
     </div>
-  )
+  );
 }
-

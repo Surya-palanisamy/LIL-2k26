@@ -1,34 +1,32 @@
-"use client"
+// src/shared-theme/ThemeModeToggle.tsx
+"use client";
 
-import { Brightness4, Brightness7, Circle } from "@mui/icons-material";
-import type { PaletteMode } from "@mui/material";
+import React, { useState } from "react";
 import {
   IconButton,
+  Menu,
+  MenuItem,
   ListItemIcon,
   ListItemText,
-  Menu,
-  MenuItem
 } from "@mui/material";
-import React from "react";
+import { Brightness4, Brightness7, Circle } from "@mui/icons-material";
+import type { PaletteMode } from "@mui/material";
 import { useTheme } from "../context/ThemeContext";
 
-
 export const ThemeModeToggle: React.FC = () => {
-  const { mode, setTheme } = useTheme()
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+  const { mode, setTheme } = useTheme();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
+    setAnchorEl(event.currentTarget);
+  };
 
-  const handleClose = () => {
-    setAnchorEl(null)
-  }
+  const handleClose = () => setAnchorEl(null);
 
   const handleSetTheme = (newMode: PaletteMode) => {
-    setTheme(newMode)
-    handleClose()
-  }
+    setTheme(newMode);
+    handleClose();
+  };
 
   return (
     <>
@@ -37,76 +35,65 @@ export const ThemeModeToggle: React.FC = () => {
         size="small"
         sx={{
           color: "text.primary",
-          transition: "all 0.3s ease",
+          transition: "0.3s",
           "&:hover": {
-            transform: "scale(1.1)",
-            backgroundColor: "rgba(0, 0, 0, 0.04)",
+            transform: "scale(1.12)",
+            bgcolor: "action.hover",
           },
         }}
         title="Toggle theme"
       >
         {mode === "dark" ? (
-          <Brightness7 sx={{ transition: "transform 0.3s ease" }} />
+          <Brightness7 sx={{ transition: "0.3s" }} />
         ) : (
-          <Brightness4 sx={{ transition: "transform 0.3s ease" }} />
+          <Brightness4 sx={{ transition: "0.3s" }} />
         )}
       </IconButton>
+
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleClose}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        PaperProps={{
+          sx: { borderRadius: 3, mt: 1, minWidth: 160, boxShadow: 4 },
+        }}
       >
         <MenuItem
           selected={mode === "light"}
           onClick={() => handleSetTheme("light")}
           sx={{
-            backgroundColor: mode === "light" ? "rgba(0, 0, 0, 0.04)" : "transparent",
-            "&:hover": {
-              backgroundColor: mode === "light" ? "rgba(0, 0, 0, 0.08)" : "rgba(0, 0, 0, 0.04)",
-            },
+            "&.Mui-selected": { bgcolor: "action.selected" },
+            "&:hover": { bgcolor: "action.hover" },
           }}
         >
           <ListItemIcon>
             <Brightness7 fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Light Mode</ListItemText>
+          <ListItemText primary="Light Mode" />
           {mode === "light" && (
-            <Circle
-              sx={{
-                fontSize: "8px",
-                ml: 1,
-                color: "primary.main",
-              }}
-            />
+            <Circle sx={{ fontSize: 9, ml: 1, color: "primary.main" }} />
           )}
         </MenuItem>
+
         <MenuItem
           selected={mode === "dark"}
           onClick={() => handleSetTheme("dark")}
           sx={{
-            backgroundColor: mode === "dark" ? "rgba(0, 0, 0, 0.04)" : "transparent",
-            "&:hover": {
-              backgroundColor: mode === "dark" ? "rgba(0, 0, 0, 0.08)" : "rgba(0, 0, 0, 0.04)",
-            },
+            "&.Mui-selected": { bgcolor: "action.selected" },
+            "&:hover": { bgcolor: "action.hover" },
           }}
         >
           <ListItemIcon>
             <Brightness4 fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Dark Mode</ListItemText>
+          <ListItemText primary="Dark Mode" />
           {mode === "dark" && (
-            <Circle
-              sx={{
-                fontSize: "8px",
-                ml: 1,
-                color: "primary.main",
-              }}
-            />
+            <Circle sx={{ fontSize: 9, ml: 1, color: "primary.main" }} />
           )}
         </MenuItem>
       </Menu>
     </>
-  )
-}
+  );
+};

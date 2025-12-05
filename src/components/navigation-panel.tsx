@@ -1,6 +1,4 @@
 "use client"
-import React from "react"
-import { useEffect, useState } from "react"
 import {
   AlertTriangle,
   ArrowLeft,
@@ -15,6 +13,7 @@ import {
   Shield,
   X,
 } from "lucide-react"
+import { useEffect, useState } from "react"
 import { type RouteInstructions, formatDistance, formatDuration } from "../services/routingservice"
 
 interface NavigationPanelProps {

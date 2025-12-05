@@ -1,89 +1,98 @@
-"use client"
-import { useState, useEffect, useRef } from "react"
-import { Bell, X, Check, AlertTriangle, Info, CheckCircle, ChevronsUp, MapPin } from "lucide-react"
-import { useAppContext } from "../context/AppContext"
-import { useNavigate } from "react-router-dom"
+"use client";
+
+import {
+  Box,
+  ClickAwayListener,
+  IconButton,
+  Button as MuiButton,
+  Paper,
+  Popper,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import {
+  AlertTriangle,
+  Bell,
+  Check,
+  CheckCircle,
+  ChevronsUp,
+  Info,
+  MapPin,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
 export default function Notifications() {
-  const { alerts, markAlertAsRead, clearAllAlerts } = useAppContext()
-  const [isOpen, setIsOpen] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-  const navigate = useNavigate()
+  const { alerts, markAlertAsRead, clearAllAlerts } = useAppContext();
+  const [open, setOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const popperRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
-  const unreadCount = alerts.filter((alert) => !alert.read).length
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+  const unreadCount = alerts.filter((a) => !a.read).length;
 
   useEffect(() => {
-    if (isOpen && window.__setIsMobileMenuOpen) {
-      window.__setIsMobileMenuOpen(false)
-    }
-  }, [isOpen])
-
-  useEffect(() => {
-    if (unreadCount > 0) {
-      try {
-        const audio = new Audio("/notification-sound.mp3")
-        audio.volume = 0.5
-        audio.play().catch((e) => console.log("Audio play failed:", e))
-      } catch (error) {
-        console.log("Audio error:", error)
-      }
-    }
-  }, [unreadCount])
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
 
   const getAlertIcon = (type: string) => {
+    const size = 20;
     switch (type) {
       case "error":
-        return <AlertTriangle className="text-red-500" size={20} />
+        return (
+          <AlertTriangle
+            size={size}
+            style={{ color: theme.palette.error.main }}
+          />
+        );
       case "warning":
-        return <AlertTriangle className="text-amber-500" size={20} />
+        return (
+          <AlertTriangle
+            size={size}
+            style={{ color: theme.palette.warning.main }}
+          />
+        );
       case "success":
-        return <CheckCircle className="text-green-500" size={20} />
+        return (
+          <CheckCircle
+            size={size}
+            style={{ color: theme.palette.success.main }}
+          />
+        );
       default:
-        return <Info className="text-blue-500" size={20} />
+        return <Info size={size} style={{ color: theme.palette.info.main }} />;
     }
-  }
+  };
 
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.round(diffMs / 60000)
-
-    if (diffMins < 1) return "Just now"
-    if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? "" : "s"} ago`
-
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`
-
-    const diffDays = Math.floor(diffHours / 24)
-    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`
-  }
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? "" : "s"} ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  };
 
   const handleNavigateToAlert = (alert: any) => {
     if (alert.coordinates) {
-      navigate("/map")
-      setIsOpen(false)
-      markAlertAsRead(alert.id)
+      navigate("/map");
+      setOpen(false);
+      markAlertAsRead(alert.id);
       localStorage.setItem(
         "mapNavigationTarget",
         JSON.stringify({
@@ -91,108 +100,233 @@ export default function Notifications() {
           zoom: 15,
           title: alert.title,
           message: alert.message,
-        }),
-      )
+        })
+      );
     }
-  }
+  };
 
   return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        id="notifications-button"
-        className="relative p-2 rounded-full hover:bg-gray-100"
-        onClick={() => setIsOpen(!isOpen)}
+    <Box sx={{ position: "relative", display: "inline-block" }}>
+      <IconButton
+        ref={buttonRef as any}
         aria-label="Notifications"
+        onClick={() => setOpen((s) => !s)}
+        sx={{
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          color: "text.primary",
+          "&:hover": { bgcolor: "action.hover" },
+          bgcolor: open ? "action.selected" : "transparent",
+        }}
+        title="Notifications"
       >
-        <Bell size={20} />
+        <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+          <Box
+            component="span"
+            sx={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 18,
+              height: 18,
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              color: "common.white",
+              bgcolor: "error.main",
+              borderRadius: "50%",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+            }}
+          >
             {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
+          </Box>
         )}
-      </button>
+      </IconButton>
 
-      {isOpen && (
-        <div
-          ref={dropdownRef}
-          id="notifications-dropdown"
-          className="absolute mt-2 bg-white rounded-lg shadow-lg z-50 right-0 lg:right-0 lg:left-14 overflow-hidden"
-          style={{
-            width: "320px",
-            maxHeight: isExpanded ? "80vh" : "600px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
-            <h3 className="font-medium">Notifications</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-gray-500 hover:text-gray-700"
-                title={isExpanded ? "Collapse" : "Expand"}
-              >
-                <ChevronsUp
-                  className={`transform ${isExpanded ? "rotate-180" : ""} transition-transform duration-300`}
-                  size={16}
-                />
-              </button>
-              <button
-                onClick={() => clearAllAlerts()}
-                className="text-sm text-gray-500 hover:text-gray-700"
-                disabled={alerts.length === 0}
-              >
-                Clear All
-              </button>
-              <button onClick={() => setIsOpen(false)}>
-                <X size={16} />
-              </button>
-            </div>
-          </div>
+      {/* Popper anchored to the button; placement bottom-end on desktop, full-screen-like on mobile */}
+      <Popper
+        open={open}
+        anchorEl={buttonRef.current}
+        placement={isDesktop ? "bottom-end" : "bottom"}
+        style={{ zIndex: 1400 }}
+        modifiers={[
+          { name: "offset", options: { offset: [0, 8] } },
+          { name: "preventOverflow", options: { padding: 8 } },
+        ]}
+      >
+        <ClickAwayListener onClickAway={() => setOpen(false)}>
+          <Paper
+            ref={popperRef as any}
+            elevation={8}
+            sx={{
+              mt: isDesktop ? 0 : 1,
+              width: isDesktop ? 360 : "100vw",
+              maxWidth: "100vw",
+              maxHeight: isDesktop ? 480 : "80vh",
+              display: "flex",
+              flexDirection: "column",
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              overflow: "hidden",
+              border: (t) => `1px solid ${t.palette.divider}`,
+            }}
+          >
+            {/* header */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                px: 2,
+                py: 1.25,
+                borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                bgcolor: "background.paper",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Notifications
+              </Typography>
 
-          <div className="overflow-y-auto flex-1">
-            {alerts.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">No notifications</div>
-            ) : (
-              alerts.map((alert) => (
-                <div key={alert.id} className={`p-4 border-b hover:bg-gray-50 ${!alert.read ? "bg-blue-50" : ""}`}>
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 mt-1">{getAlertIcon(alert.type)}</div>
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium">{alert.title}</h4>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <IconButton
+                  size="small"
+                  onClick={() => setIsExpanded((s) => !s)}
+                  sx={{ color: "text.secondary" }}
+                  title={isExpanded ? "Collapse" : "Expand"}
+                >
+                  <ChevronsUp
+                    size={16}
+                    style={{
+                      transform: isExpanded ? "rotate(180deg)" : "none",
+                      transition: "transform .2s",
+                    }}
+                  />
+                </IconButton>
+
+                <MuiButton
+                  size="small"
+                  onClick={() => clearAllAlerts()}
+                  disabled={alerts.length === 0}
+                  sx={{ textTransform: "none", color: "text.secondary" }}
+                >
+                  Clear All
+                </MuiButton>
+
+                <IconButton
+                  size="small"
+                  onClick={() => setOpen(false)}
+                  sx={{ color: "text.secondary" }}
+                >
+                  <X size={16} />
+                </IconButton>
+              </Box>
+            </Box>
+
+            {/* list */}
+            <Box sx={{ overflowY: "auto", flex: 1 }}>
+              {alerts.length === 0 ? (
+                <Box
+                  sx={{ p: 3, textAlign: "center", color: "text.secondary" }}
+                >
+                  No notifications
+                </Box>
+              ) : (
+                alerts.map((alert) => (
+                  <Box
+                    key={alert.id}
+                    sx={{
+                      px: 2,
+                      py: 1.25,
+                      borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                      bgcolor: !alert.read
+                        ? theme.palette.mode === "dark"
+                          ? "rgba(99,102,241,0.06)"
+                          : "rgba(59,130,246,0.06)"
+                        : "transparent",
+                      ":hover": { bgcolor: "action.hover" },
+                      display: "flex",
+                      gap: 2,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <Box sx={{ mt: "4px" }}>{getAlertIcon(alert.type)}</Box>
+
+                    <Box sx={{ flex: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 600, color: "text.primary" }}
+                        >
+                          {alert.title}
+                        </Typography>
+
                         {!alert.read && (
-                          <button
+                          <IconButton
+                            size="small"
                             onClick={() => markAlertAsRead(alert.id)}
-                            className="text-blue-500 hover:text-blue-700"
+                            sx={{ color: "primary.main", p: 0.5 }}
                             aria-label="Mark as read"
                           >
-                            <Check size={16} />
-                          </button>
+                            <Check size={14} />
+                          </IconButton>
                         )}
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">{alert.message}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <p className="text-xs text-gray-400">{formatTime(alert.timestamp)}</p>
+                      </Box>
+
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "text.secondary", mt: 0.5 }}
+                      >
+                        {alert.message}
+                      </Typography>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          mt: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "text.disabled" }}
+                        >
+                          {formatTime(alert.timestamp)}
+                        </Typography>
+
                         {alert.coordinates && (
-                          <button
+                          <MuiButton
+                            size="small"
                             onClick={() => handleNavigateToAlert(alert)}
-                            className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700"
+                            sx={{
+                              textTransform: "none",
+                              color: "primary.main",
+                            }}
                           >
-                            <MapPin size={12} />
-                            <span>View on map</span>
-                          </button>
+                            <MapPin size={12} style={{ marginRight: 6 }} />
+                            View on map
+                          </MuiButton>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
+                      </Box>
+                    </Box>
+                  </Box>
+                ))
+              )}
+            </Box>
+          </Paper>
+        </ClickAwayListener>
+      </Popper>
+    </Box>
+  );
 }
