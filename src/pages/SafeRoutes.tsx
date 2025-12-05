@@ -91,7 +91,7 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
 }
 
 // Tamil Nadu districts data
-const tamilNaduDistricts = [
+const tamilNaduDistricts: { name: string; coordinates: [number, number] }[] = [
   { name: "Chennai", coordinates: [13.0827, 80.2707] },
   { name: "Coimbatore", coordinates: [11.0168, 76.9558] },
   { name: "Madurai", coordinates: [9.9252, 78.1198] },

@@ -1,8 +1,26 @@
 "use client"
-
-import React from "react"
 import { useState } from "react"
 import { Building2, Search, Phone, MessageSquare, RefreshCw } from "lucide-react"
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  IconButton,
+  LinearProgress,
+  useTheme,
+  InputAdornment,
+} from "@mui/material"
 import { useAppContext } from "../context/AppContext"
 import LoadingSpinner from "../components/LoadingSpinner"
 
@@ -10,6 +28,7 @@ export default function Shelters() {
   const { shelters, coordinators, resources, refreshData, isLoading } = useAppContext()
   const [searchQuery, setSearchQuery] = useState("")
   const [refreshing, setRefreshing] = useState(false)
+  const theme = useTheme()
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -17,14 +36,12 @@ export default function Shelters() {
     setTimeout(() => setRefreshing(false), 1000)
   }
 
-  // Filter shelters based on search query
   const filteredShelters = shelters.filter(
     (shelter) =>
       shelter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       shelter.location.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  // Calculate shelter stats
   const totalCapacity = shelters.reduce((total, shelter) => {
     const [current, max] = shelter.capacity.split("/").map(Number)
     return total + (max || 0)
@@ -38,222 +55,257 @@ export default function Shelters() {
   const availableSpaces = totalCapacity - currentOccupancy
 
   const shelterStats = [
-    {
-      title: "Total Active Shelters",
-      value: shelters.length.toString(),
-      icon: <Building2 className="text-blue-500" size={24} />,
-    },
-    {
-      title: "Total Capacity",
-      value: totalCapacity.toLocaleString(),
-      icon: <Building2 className="text-blue-500" size={24} />,
-    },
-    {
-      title: "Current Occupancy",
-      value: currentOccupancy.toLocaleString(),
-      icon: <Building2 className="text-blue-500" size={24} />,
-    },
-    {
-      title: "Available Spaces",
-      value: availableSpaces.toLocaleString(),
-      icon: <Building2 className="text-blue-500" size={24} />,
-    },
+    { title: "Total Active Shelters", value: shelters.length.toString(), icon: <Building2 size={24} /> },
+    { title: "Total Capacity", value: totalCapacity.toLocaleString(), icon: <Building2 size={24} /> },
+    { title: "Current Occupancy", value: currentOccupancy.toLocaleString(), icon: <Building2 size={24} /> },
+    { title: "Available Spaces", value: availableSpaces.toLocaleString(), icon: <Building2 size={24} /> },
   ]
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen />
+    return <LoadingSpinner fullScreen type="dots" />
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Available":
+        return "success"
+      case "Near Full":
+        return "warning"
+      case "Full":
+        return "error"
+      default:
+        return "default"
+    }
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-2xl font-bold mb-4 md:mb-0">Relief Connect</h1>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleRefresh}
-            className={`p-2 rounded-full hover:bg-gray-100 ${refreshing ? "animate-spin" : ""}`}
-            disabled={refreshing}
-          >
-            <RefreshCw size={20} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="bg-gray-200 rounded-full p-2">
-              <img src="public/admin.png" alt="John Doe" className="w-8 h-8 rounded-full" />
-            </div>
-            <span className="font-medium">Admin</span>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+          Relief Connect
+        </Typography>
+        <Stack direction="row" spacing={2} sx={{ width: { xs: "100%", md: "auto" } }}>
+          <IconButton onClick={handleRefresh} disabled={refreshing} size="medium">
+            <RefreshCw size={20} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+          </IconButton>
+        </Stack>
+      </Box>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
         {shelterStats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">{stat.title}</p>
-                <h3 className="text-3xl font-bold mt-2">{stat.value}</h3>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-full">{stat.icon}</div>
-            </div>
-          </div>
+          <Card key={index} sx={{ flex: 1 }}>
+            <CardContent>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <Box>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                    {stat.title}
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {stat.value}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    p: 1,
+                    borderRadius: "50%",
+                    bgcolor: theme.palette.primary.main + "20",
+                    display: "flex",
+                    color: theme.palette.primary.main,
+                  }}
+                >
+                  {stat.icon}
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         ))}
-      </div>
+      </Stack>
 
       {/* Active Shelters */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-          <h2 className="text-xl font-semibold">Active Shelters</h2>
-          <div className="relative w-full md:w-64 mt-2 md:mt-0">
-            <input
-              type="text"
-              placeholder="Search shelters..."
-              className="w-full pl-10 pr-4 py-2 border rounded-lg"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-          </div>
-        </div>
+      <Card sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", md: "center" },
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Active Shelters
+          </Typography>
+          <TextField
+            placeholder="Search shelters..."
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={18} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ width: { xs: "100%", md: 300 } }}
+          />
+        </Box>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Shelter Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Capacity
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Resources
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow
+                sx={{ bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[50] }}
+              >
+                <TableCell>Shelter Name</TableCell>
+                <TableCell>Location</TableCell>
+                <TableCell>Capacity</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Resources</TableCell>
+                <TableCell>Contact</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filteredShelters.map((shelter, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium">{shelter.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{shelter.location}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{shelter.capacity}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        shelter.status === "Available"
-                          ? "bg-green-100 text-green-600"
-                          : shelter.status === "Near Full"
-                            ? "bg-yellow-100 text-yellow-600"
-                            : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {shelter.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        shelter.resources === "Adequate"
-                          ? "bg-blue-100 text-blue-600"
-                          : shelter.resources === "Low"
-                            ? "bg-yellow-100 text-yellow-600"
-                            : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {shelter.resources}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{shelter.contact}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button className="text-blue-500 hover:text-blue-700">Manage</button>
-                  </td>
-                </tr>
+                <TableRow key={index}>
+                  <TableCell sx={{ fontWeight: 500 }}>{shelter.name}</TableCell>
+                  <TableCell>{shelter.location}</TableCell>
+                  <TableCell>{shelter.capacity}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={shelter.status}
+                      color={getStatusColor(shelter.status)}
+                      variant="outlined"
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={shelter.resources}
+                      color={
+                        shelter.resources === "Adequate" ? "success" : shelter.resources === "Low" ? "warning" : "error"
+                      }
+                      variant="outlined"
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>{shelter.contact}</TableCell>
+                  <TableCell>
+                    <Button size="small" color="primary">
+                      Manage
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
 
       {/* Resource Management */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Resource Management</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          Resource Management
+        </Typography>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           {resources.map((resource, index) => (
-            <div key={index} className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="flex items-center gap-3 mb-4">
-                {resource.icon}
-                <div>
-                  <h3 className="font-medium">{resource.name}</h3>
-                  <span className="text-gray-500">{resource.percentage}%</span>
-                </div>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full mb-4">
-                <div
-                  className={`h-full rounded-full ${
-                    resource.percentage > 70
-                      ? "bg-green-500"
-                      : resource.percentage > 40
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                  }`}
-                  style={{ width: `${resource.percentage}%` }}
-                ></div>
-              </div>
-              <button className="w-full border border-blue-500 text-blue-500 py-2 rounded-lg hover:bg-blue-50">
-                Assign More
-              </button>
-            </div>
+            <Card key={index} sx={{ flex: 1 }}>
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  {resource.icon}
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {resource.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {resource.percentage}%
+                    </Typography>
+                  </Box>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={resource.percentage}
+                  sx={{
+                    mb: 2,
+                    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[700] : theme.palette.grey[200],
+                    "& .MuiLinearProgress-bar": {
+                      backgroundColor:
+                        resource.percentage > 70
+                          ? theme.palette.success.main
+                          : resource.percentage > 40
+                            ? theme.palette.warning.main
+                            : theme.palette.error.main,
+                    },
+                  }}
+                />
+                <Button variant="outlined" fullWidth size="small">
+                  Assign More
+                </Button>
+              </CardContent>
+            </Card>
           ))}
-        </div>
-      </div>
+        </Stack>
+      </Box>
 
       {/* Shelter Coordinators */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Shelter Coordinators</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Box>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          Shelter Coordinators
+        </Typography>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           {coordinators.map((coordinator, index) => (
-            <div key={index} className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="flex items-center gap-4 mb-4">
-                <img
-                  src={coordinator.avatar || "/placeholder.svg"}
-                  alt={coordinator.name}
-                  className="w-12 h-12 rounded-full"
-                />
-                <div>
-                  <h3 className="font-medium">{coordinator.name}</h3>
-                  <p className="text-gray-500 text-sm">{coordinator.role}</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mb-4">{coordinator.shelter}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button className="flex items-center justify-center gap-2 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
-                  <Phone size={16} />
-                  Call
-                </button>
-                <button className="flex items-center justify-center gap-2 border border-blue-500 text-blue-500 py-2 rounded-lg hover:bg-blue-50">
-                  <MessageSquare size={16} />
-                  Message
-                </button>
-              </div>
-            </div>
+            <Card key={index} sx={{ flex: 1 }}>
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                  <img
+                    src={coordinator.avatar || "/placeholder.svg"}
+                    alt={coordinator.name}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                  />
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {coordinator.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {coordinator.role}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="caption" sx={{ display: "block", mb: 2 }}>
+                  {coordinator.shelter}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button startIcon={<Phone size={16} />} variant="contained" size="small" sx={{ flex: 1 }}>
+                    Call
+                  </Button>
+                  <Button startIcon={<MessageSquare size={16} />} variant="outlined" size="small" sx={{ flex: 1 }}>
+                    Message
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
           ))}
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Box>
+    </Box>
   )
 }
-

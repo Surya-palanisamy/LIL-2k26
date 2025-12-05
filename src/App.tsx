@@ -22,6 +22,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+import { Box, useTheme } from "@mui/material";
 import Dashboard from "./pages/Dashboard";
 import MapView from "./pages/MapView";
 import Alerts from "./pages/Alerts";
@@ -32,7 +33,8 @@ import { AppProvider, useAppContext } from "./context/AppContext";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Notifications from "./components/Notifications";
 import SignInSide from "./sign-in-side/SignInSide";
-// Protected route component
+import { ThemeModeToggle } from "./shared-theme/ThemeModeToggle";
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAppContext();
   const location = useLocation();
@@ -52,8 +54,8 @@ function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, logout, isLoading } = useAppContext();
   const location = useLocation();
+  const muiTheme = useTheme();
 
-  // Expose the state setter for the Notifications component
   useEffect(() => {
     (window as any).__setIsMobileMenuOpen = setIsMobileMenuOpen;
 
@@ -62,12 +64,10 @@ function AppContent() {
     };
   }, []);
 
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const mobileMenu = document.querySelector('[data-mobile-menu="true"]');
@@ -111,147 +111,217 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white z-50 flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-2">
-          <Droplets className="text-blue-500" size={24} />
-          <span className="text-xl font-bold">FloodSense</span>
-        </div>
-        <div className="flex items-center gap-2">
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        transition: "background-color 0.3s ease",
+      }}
+    >
+      <Box
+        sx={{
+          display: { xs: "flex", lg: "none" },
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bgcolor: "background.paper",
+          zIndex: 50,
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 2,
+          borderBottom: `1px solid ${muiTheme.palette.divider}`,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Droplets size={24} color={muiTheme.palette.primary.main} />
+          <span style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
+            FloodSense
+          </span>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <ThemeModeToggle />
           <Notifications />
           <button
             onClick={toggleMobileMenu}
-            className="p-2"
+            style={{
+              padding: "0.5rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: muiTheme.palette.text.primary,
+            }}
             data-hamburger="true"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      {/* Sidebar */}
-      <div
+      <Box
         data-mobile-menu="true"
-        className={`fixed left-0 top-0 h-full w-64 bg-white shadow-lg transform lg:translate-x-0 transition-transform duration-300 z-40 ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        sx={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          height: "100%",
+          width: 256,
+          bgcolor: "background.paper",
+          boxShadow: 2,
+          transform: {
+            xs: isMobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
+            lg: "translateX(0)",
+          },
+          transition: "transform 0.3s ease",
+          zIndex: 40,
+          borderRight: `1px solid ${muiTheme.palette.divider}`,
+        }}
       >
-        <div className="p-4 border-b flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Droplets className="text-blue-500" size={24} />
-            <span className="text-xl font-bold">FloodSense</span>
-          </div>
-          <div className="hidden lg:block">
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: `1px solid ${muiTheme.palette.divider}`,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Droplets size={24} color={muiTheme.palette.primary.main} />
+            <span style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
+              FloodSense
+            </span>
+          </Box>
+          <Box sx={{ display: { xs: "none", lg: "block" } }}>
             <Notifications />
-          </div>
-        </div>
+          </Box>
+        </Box>
 
-        <nav className="p-4 space-y-2 mt-16 lg:mt-0">
-          <Link
+        <Box component="nav" sx={{ p: 2, mt: 4, lg: { mt: 0 }, space: 1 }}>
+          <NavLink
             to="/"
-            className={`flex items-center gap-3 p-3 rounded-lg ${
-              location.pathname === "/"
-                ? "bg-blue-50 text-blue-700"
-                : "hover:bg-blue-50 hover:text-blue-700"
-            }`}
+            icon={<Home size={20} />}
+            label="Dashboard"
+            isActive={location.pathname === "/"}
             onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Home size={20} />
-            <span>Dashboard</span>
-          </Link>
-          <Link
+            theme={muiTheme}
+          />
+          <NavLink
             to="/map"
-            className={`flex items-center gap-3 p-3 rounded-lg ${
-              location.pathname === "/map"
-                ? "bg-blue-50 text-blue-700"
-                : "hover:bg-blue-50 hover:text-blue-700"
-            }`}
+            icon={<Map size={20} />}
+            label="Flood Map"
+            isActive={location.pathname === "/map"}
             onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Map size={20} />
-            <span>Flood Map</span>
-          </Link>
-          <Link
+            theme={muiTheme}
+          />
+          <NavLink
             to="/alerts"
-            className={`flex items-center gap-3 p-3 rounded-lg ${
-              location.pathname === "/alerts"
-                ? "bg-blue-50 text-blue-700"
-                : "hover:bg-blue-50 hover:text-blue-700"
-            }`}
+            icon={<Bell size={20} />}
+            label="Alerts"
+            isActive={location.pathname === "/alerts"}
             onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Bell size={20} />
-            <span>Alerts</span>
-          </Link>
-          <Link
+            theme={muiTheme}
+          />
+          <NavLink
             to="/safe-routes"
-            className={`flex items-center gap-3 p-3 rounded-lg ${
-              location.pathname === "/safe-routes"
-                ? "bg-blue-50 text-blue-700"
-                : "hover:bg-blue-50 hover:text-blue-700"
-            }`}
+            icon={<RouteIcon size={20} />}
+            label="Safe Routes"
+            isActive={location.pathname === "/safe-routes"}
             onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <RouteIcon size={20} />
-            <span>Safe Routes</span>
-          </Link>
-          <Link
+            theme={muiTheme}
+          />
+          <NavLink
             to="/shelters"
-            className={`flex items-center gap-3 p-3 rounded-lg ${
-              location.pathname === "/shelters"
-                ? "bg-blue-50 text-blue-700"
-                : "hover:bg-blue-50 hover:text-blue-700"
-            }`}
+            icon={<Building2 size={20} />}
+            label="Shelters"
+            isActive={location.pathname === "/shelters"}
             onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Building2 size={20} />
-            <span>Shelters</span>
-          </Link>
-          <Link
+            theme={muiTheme}
+          />
+          <NavLink
             to="/emergency-help"
-            className={`flex items-center gap-3 p-3 rounded-lg ${
-              location.pathname === "/emergency-help"
-                ? "bg-blue-50 text-blue-700"
-                : "hover:bg-blue-50 hover:text-blue-700"
-            }`}
+            icon={<PhoneCall size={20} />}
+            label="Emergency Help"
+            isActive={location.pathname === "/emergency-help"}
             onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <PhoneCall size={20} />
-            <span>Emergency Help</span>
-          </Link>
-        </nav>
+            theme={muiTheme}
+          />
+        </Box>
 
-        <div className="absolute bottom-0 w-full p-4 border-t">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gray-200 rounded-full p-2">
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            width: "100%",
+            p: 2,
+            borderTop: `1px solid ${muiTheme.palette.divider}`,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                sx={{
+                  bgcolor: muiTheme.palette.grey[300],
+                  borderRadius: "50%",
+                  p: 0.25,
+                }}
+              >
                 <img
                   src={user?.avatar || "/placeholder.svg?height=40&width=40"}
                   alt={user?.name || "User"}
-                  className="w-8 h-8 rounded-full"
+                  style={{
+                    width: "2rem",
+                    height: "2rem",
+                    borderRadius: "50%",
+                  }}
                 />
-              </div>
-              <div>
-                <div className="font-medium">{user?.name || "Admin User"}</div>
-                <div className="text-sm text-gray-500">
+              </Box>
+              <Box>
+                <div style={{ fontWeight: 500 }}>
+                  {user?.name || "Admin User"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.875rem",
+                    color: muiTheme.palette.text.secondary,
+                  }}
+                >
                   {user?.email || "admin@floodwatch.com"}
                 </div>
-              </div>
-            </div>
+              </Box>
+            </Box>
             <button
               onClick={logout}
-              className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: muiTheme.palette.text.secondary,
+                padding: "0.5rem",
+                borderRadius: "0.375rem",
+              }}
               title="Logout"
             >
               <LogOut size={20} />
             </button>
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
 
-      {/* Main Content */}
-      <div className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
+      <Box
+        sx={{
+          marginLeft: { xs: 0, lg: "256px" },
+          paddingTop: { xs: "64px", lg: 0 },
+          minHeight: "100vh",
+        }}
+      >
         <Routes>
           <Route
             path="/"
@@ -304,10 +374,48 @@ function AppContent() {
           <Route path="/login" element={<SignInSide />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
+
+interface NavLinkProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  theme: any;
+}
+
+const NavLink: React.FC<NavLinkProps> = ({
+  to,
+  icon,
+  label,
+  isActive,
+  onClick,
+  theme,
+}) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "0.75rem",
+      padding: "0.75rem",
+      borderRadius: "0.5rem",
+      textDecoration: "none",
+      color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
+      backgroundColor: isActive ? theme.palette.action.selected : "transparent",
+      transition: "all 0.2s ease",
+      marginBottom: "0.5rem",
+    }}
+  >
+    {icon}
+    <span>{label}</span>
+  </Link>
+);
 
 function App() {
   return (

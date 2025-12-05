@@ -1,36 +1,90 @@
-"use client"
-
-import React from "react"
-import { useState, type FormEvent } from "react"
-import { Bell, AlertTriangle, Info, Trash2, Edit, Send, Users, Bot, MessageSquare, RefreshCw } from "lucide-react"
-import { useAppContext } from "../context/AppContext"
-import LoadingSpinner from "../components/LoadingSpinner"
+"use client";
+import { useState, type FormEvent } from "react";
+import {
+  Bell,
+  AlertTriangle,
+  Info,
+  Trash2,
+  Edit,
+  Send,
+  Users,
+  Bot,
+  MessageSquare,
+  RefreshCw,
+} from "lucide-react";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  useTheme,
+  IconButton,
+} from "@mui/material";
+import { useAppContext } from "../context/AppContext";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function Alerts() {
-  const { isLoading, refreshData, sendEmergencyBroadcast, addAlert } = useAppContext()
-  const [messageTitle, setMessageTitle] = useState("")
-  const [messageContent, setMessageContent] = useState("")
-  const [notificationType, setNotificationType] = useState("SMS")
-  const [refreshing, setRefreshing] = useState(false)
-  const [selectedAlert, setSelectedAlert] = useState<string | null>(null)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [showNewAlertModal, setShowNewAlertModal] = useState(false)
-  const [newAlertTitle, setNewAlertTitle] = useState("")
-  const [newAlertMessage, setNewAlertMessage] = useState("")
-  const [newAlertType, setNewAlertType] = useState("warning")
-  const [sendingAlert, setSendingAlert] = useState(false)
+  const { isLoading, refreshData, sendEmergencyBroadcast, addAlert } =
+    useAppContext();
+  const [messageTitle, setMessageTitle] = useState("");
+  const [messageContent, setMessageContent] = useState("");
+  const [notificationType, setNotificationType] = useState("SMS");
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showNewAlertModal, setShowNewAlertModal] = useState(false);
+  const [newAlertTitle, setNewAlertTitle] = useState("");
+  const [newAlertMessage, setNewAlertMessage] = useState("");
+  const [newAlertType, setNewAlertType] = useState("warning");
+  const [sendingAlert, setSendingAlert] = useState(false);
+  const theme = useTheme();
 
   const alertStats = [
-    { title: "Total Active Alerts", value: "12", icon: <Bell className="text-blue-500" size={20} /> },
-    { title: "High Risk Alerts", value: "3", icon: <AlertTriangle className="text-red-500" size={20} /> },
-    { title: "Pending Acknowledgments", value: "245", icon: <MessageSquare className="text-orange-500" size={20} /> },
-    { title: "Average Response Time", value: "4.2m", icon: <Info className="text-green-500" size={20} /> },
-  ]
+    {
+      title: "Total Active Alerts",
+      value: "12",
+      icon: <Bell size={20} />,
+      color: "info" as const,
+    },
+    {
+      title: "High Risk Alerts",
+      value: "3",
+      icon: <AlertTriangle size={20} />,
+      color: "error" as const,
+    },
+    {
+      title: "Pending Acknowledgments",
+      value: "245",
+      icon: <MessageSquare size={20} />,
+      color: "warning" as const,
+    },
+    {
+      title: "Average Response Time",
+      value: "4.2m",
+      icon: <Info size={20} />,
+      color: "success" as const,
+    },
+  ];
 
   const activeAlerts = [
     {
       id: "A001",
-      status: "red",
+      status: "high",
       title: "Severe Weather Warning",
       riskLevel: "High",
       timeIssued: "10:45 AM",
@@ -38,7 +92,7 @@ export default function Alerts() {
     },
     {
       id: "A002",
-      status: "orange",
+      status: "medium",
       title: "Road Closure Alert",
       riskLevel: "Moderate",
       timeIssued: "09:30 AM",
@@ -46,28 +100,30 @@ export default function Alerts() {
     },
     {
       id: "A003",
-      status: "blue",
+      status: "low",
       title: "Public Transport Delay",
       riskLevel: "Low",
       timeIssued: "08:15 AM",
       responseRate: "65%",
     },
-  ]
+  ];
 
   const aiSuggestions = [
     {
       id: "S001",
       severity: "Moderate",
       confidence: "89%",
-      message: "Heavy rainfall expected in the next 24 hours. Consider issuing a flood warning for low-lying areas.",
+      message:
+        "Heavy rainfall expected in the next 24 hours. Consider issuing a flood warning for low-lying areas.",
     },
     {
       id: "S002",
       severity: "Low",
       confidence: "95%",
-      message: "Traffic congestion detected on Main Street due to road work. Suggest alternate routes.",
+      message:
+        "Traffic congestion detected on Main Street due to road work. Suggest alternate routes.",
     },
-  ]
+  ];
 
   const responseData = [
     {
@@ -84,470 +140,568 @@ export default function Alerts() {
       delivered: "12,458",
       responded: "11,442",
     },
-  ]
+  ];
 
   const handleRefresh = async () => {
-    setRefreshing(true)
-    await refreshData()
-    setTimeout(() => setRefreshing(false), 1000)
-  }
+    setRefreshing(true);
+    await refreshData();
+    setTimeout(() => setRefreshing(false), 1000);
+  };
 
   const handleSendAlert = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (messageTitle && messageContent) {
-      setSendingAlert(true)
+      setSendingAlert(true);
       try {
-        await sendEmergencyBroadcast(`${messageTitle}: ${messageContent}`)
-        setMessageTitle("")
-        setMessageContent("")
+        await sendEmergencyBroadcast(`${messageTitle}: ${messageContent}`);
+        setMessageTitle("");
+        setMessageContent("");
       } catch (error) {
-        console.error("Error sending alert:", error)
+        console.error("Error sending alert:", error);
       } finally {
-        setSendingAlert(false)
+        setSendingAlert(false);
       }
     }
-  }
+  };
 
   const handleDeleteAlert = (id: string) => {
-    setSelectedAlert(id)
-    setShowDeleteModal(true)
-  }
+    setSelectedAlert(id);
+    setShowDeleteModal(true);
+  };
 
   const confirmDeleteAlert = () => {
-    // In a real app, this would call an API to delete the alert
-    console.log(`Deleting alert ${selectedAlert}`)
-    setShowDeleteModal(false)
-    setSelectedAlert(null)
-  }
+    console.log(`Deleting alert ${selectedAlert}`);
+    setShowDeleteModal(false);
+    setSelectedAlert(null);
+  };
 
   const handleUseAiSuggestion = (suggestion: any) => {
-    setMessageTitle(`AI Suggested: ${suggestion.severity} Alert`)
-    setMessageContent(suggestion.message)
-  }
+    setMessageTitle(`AI Suggested: ${suggestion.severity} Alert`);
+    setMessageContent(suggestion.message);
+  };
 
   const handleCreateNewAlert = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (newAlertTitle && newAlertMessage) {
-      setSendingAlert(true)
+      setSendingAlert(true);
       try {
         await addAlert({
           title: newAlertTitle,
           message: newAlertMessage,
           type: newAlertType as any,
-        })
-        setNewAlertTitle("")
-        setNewAlertMessage("")
-        setShowNewAlertModal(false)
+        });
+        setNewAlertTitle("");
+        setNewAlertMessage("");
+        setShowNewAlertModal(false);
       } catch (error) {
-        console.error("Error creating alert:", error)
+        console.error("Error creating alert:", error);
       } finally {
-        setSendingAlert(false)
+        setSendingAlert(false);
       }
     }
-  }
+  };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen type="dots" />
+    return <LoadingSpinner fullScreen type="dots" />;
   }
 
-  return (
-    <div className="p-4 md:p-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {alertStats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl p-4 md:p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">{stat.title}</p>
-                <h3 className="text-2xl md:text-3xl font-bold mt-2">{stat.value}</h3>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-full">{stat.icon}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "high":
+        return theme.palette.error.main;
+      case "medium":
+        return theme.palette.warning.main;
+      case "low":
+        return theme.palette.info.main;
+      default:
+        return theme.palette.grey[500];
+    }
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  return (
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {/* Stats Grid */}
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
+        {alertStats.map((stat, index) => (
+          <Card key={index} sx={{ flex: 1 }}>
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    sx={{ mb: 1 }}
+                  >
+                    {stat.title}
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {stat.value}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: "50%",
+                    bgcolor: `${theme.palette[stat.color].main}20`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: theme.palette[stat.color].main,
+                  }}
+                >
+                  {stat.icon}
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+
+      <Stack direction={{ xs: "column", lg: "row" }} spacing={3}>
         {/* Left Column */}
-        <div className="space-y-8">
+        <Stack sx={{ flex: 1 }} spacing={3}>
           {/* Active Alerts Table */}
-          <div className="bg-white rounded-xl shadow-sm">
-            <div className="flex justify-between items-center p-4 md:p-6 border-b">
-              <h2 className="text-lg md:text-xl font-semibold">Active Alerts</h2>
-              <div className="flex gap-2">
-                <button
+          <Card>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                p: 2,
+                borderBottom: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Active Alerts
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <IconButton
                   onClick={handleRefresh}
-                  className={`p-2 rounded-full hover:bg-gray-100 ${refreshing ? "animate-spin" : ""}`}
                   disabled={refreshing}
+                  size="small"
+                  sx={{
+                    animation: refreshing ? "spin 1s linear infinite" : "none",
+                  }}
                 >
                   <RefreshCw size={20} />
-                </button>
-                <button
+                </IconButton>
+                <Button
                   onClick={() => setShowNewAlertModal(true)}
-                  className="flex items-center gap-2 bg-blue-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-blue-600"
+                  startIcon={<Bell size={18} />}
+                  variant="contained"
+                  color="info"
+                  size="small"
                 >
-                  <Bell size={18} />
-                  <span className="hidden sm:inline">Issue New Alert</span>
-                </button>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Alert Title
-                    </th>
-                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Risk Level
-                    </th>
-                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Time Issued
-                    </th>
-                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Response Rate
-                    </th>
-                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
+                  New Alert
+                </Button>
+              </Stack>
+            </Box>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      bgcolor:
+                        theme.palette.mode === "dark"
+                          ? theme.palette.grey[800]
+                          : theme.palette.grey[50],
+                    }}
+                  >
+                    <TableCell>Status</TableCell>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Risk Level</TableCell>
+                    <TableCell>Time Issued</TableCell>
+                    <TableCell>Response Rate</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {activeAlerts.map((alert) => (
-                    <tr key={alert.id}>
-                      <td className="px-4 md:px-6 py-4">
-                        <div
-                          className={`w-3 h-3 rounded-full ${
-                            alert.status === "red"
-                              ? "bg-red-500"
-                              : alert.status === "orange"
-                                ? "bg-orange-500"
-                                : "bg-blue-500"
-                          }`}
-                        ></div>
-                      </td>
-                      <td className="px-4 md:px-6 py-4 font-medium">{alert.title}</td>
-                      <td className="px-4 md:px-6 py-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
+                    <TableRow key={alert.id}>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            bgcolor: getStatusColor(alert.status),
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {alert.title}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={alert.riskLevel}
+                          color={
                             alert.riskLevel === "High"
-                              ? "bg-red-100 text-red-600"
+                              ? "error"
                               : alert.riskLevel === "Moderate"
-                                ? "bg-orange-100 text-orange-600"
-                                : "bg-blue-100 text-blue-600"
-                          }`}
-                        >
-                          {alert.riskLevel}
-                        </span>
-                      </td>
-                      <td className="px-4 md:px-6 py-4 text-gray-500">{alert.timeIssued}</td>
-                      <td className="px-4 md:px-6 py-4 font-medium">{alert.responseRate}</td>
-                      <td className="px-4 md:px-6 py-4">
-                        <div className="flex gap-2">
-                          <button className="text-gray-400 hover:text-gray-600">
+                              ? "warning"
+                              : "info"
+                          }
+                          size="small"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>{alert.timeIssued}</TableCell>
+                      <TableCell>{alert.responseRate}</TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <IconButton size="small" color="inherit">
                             <Edit size={16} />
-                          </button>
-                          <button
-                            className="text-gray-400 hover:text-gray-600"
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="inherit"
                             onClick={() => handleDeleteAlert(alert.id)}
                           >
                             <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
 
           {/* Send Emergency Notification */}
-          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold mb-6">Send Emergency Notification</h2>
-            <form onSubmit={handleSendAlert} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notification Type</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {["SMS", "App Notification", "Website Banner"].map((type) => (
-                    <button
-                      type="button"
-                      key={type}
-                      onClick={() => setNotificationType(type)}
-                      className={`p-3 rounded-lg text-center ${
-                        notificationType === type
-                          ? "bg-blue-50 text-blue-600 border-2 border-blue-200"
-                          : "bg-gray-50 text-gray-600 border-2 border-transparent"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                Send Emergency Notification
+              </Typography>
+              <Box
+                component="form"
+                onSubmit={handleSendAlert}
+                sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+              >
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Notification Type
+                  </Typography>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    {["SMS", "App Notification", "Website Banner"].map(
+                      (type) => (
+                        <Button
+                          key={type}
+                          onClick={() => setNotificationType(type)}
+                          variant={
+                            notificationType === type ? "contained" : "outlined"
+                          }
+                          sx={{ flex: 1 }}
+                        >
+                          {type}
+                        </Button>
+                      )
+                    )}
+                  </Stack>
+                </Box>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message Title</label>
-                <input
-                  type="text"
+                <TextField
+                  label="Message Title"
                   value={messageTitle}
                   onChange={(e) => setMessageTitle(e.target.value)}
-                  placeholder="Enter alert title"
-                  className="w-full p-3 border rounded-lg"
+                  fullWidth
                   required
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message Content</label>
-                <textarea
+                <TextField
+                  label="Message Content"
                   value={messageContent}
                   onChange={(e) => setMessageContent(e.target.value)}
-                  placeholder="Enter alert message"
+                  multiline
                   rows={4}
-                  className="w-full p-3 border rounded-lg"
+                  fullWidth
                   required
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Target Audience</label>
-                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                  <Users size={20} className="text-gray-500" />
-                  <span>All Residents (12,458)</span>
-                </div>
-              </div>
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[50],
+                    borderRadius: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Users size={20} />
+                  <Typography variant="body2">
+                    All Residents (12,458)
+                  </Typography>
+                </Box>
 
-              <button
-                type="submit"
-                disabled={!messageTitle || !messageContent || sendingAlert}
-                className="w-full bg-red-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-600 disabled:opacity-50 disabled:hover:bg-red-500"
-              >
-                {sendingAlert ? (
-                  <>
-                    <LoadingSpinner size="sm" color="white" />
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send size={20} />
-                    <span>Send Emergency Alert</span>
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
+                <Button
+                  type="submit"
+                  disabled={!messageTitle || !messageContent || sendingAlert}
+                  variant="contained"
+                  color="error"
+                  startIcon={
+                    sendingAlert ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <Send size={20} />
+                    )
+                  }
+                  fullWidth
+                >
+                  {sendingAlert ? "Sending..." : "Send Emergency Alert"}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Stack>
 
         {/* Right Column */}
-        <div className="space-y-8">
+        <Stack sx={{ flex: 1 }} spacing={3}>
           {/* Response Monitoring */}
-          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold mb-6">Response Monitoring</h2>
-            <div className="flex items-center justify-center mb-8">
-              <div className="relative">
-                <svg className="w-24 h-24 md:w-32 md:h-32">
-                  <circle
-                    className="text-gray-200"
-                    strokeWidth="10"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="56"
-                    cx="64"
-                    cy="64"
-                  />
-                  <circle
-                    className="text-green-500"
-                    strokeWidth="10"
-                    strokeDasharray={76 * 3.14}
-                    strokeDashoffset={((100 - 76) / 100) * 3.14 * 56}
-                    strokeLinecap="round"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="56"
-                    cx="64"
-                    cy="64"
-                  />
-                </svg>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                  <div className="text-xl md:text-2xl font-bold">76%</div>
-                  <div className="text-xs md:text-sm text-gray-500">Response Rate</div>
-                </div>
-              </div>
-            </div>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                Response Monitoring
+              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                <Box sx={{ position: "relative", width: 120, height: 120 }}>
+                  <svg style={{ width: "100%", height: "100%" }}>
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="50"
+                      fill="none"
+                      stroke={theme.palette.divider}
+                      strokeWidth="8"
+                    />
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="50"
+                      fill="none"
+                      stroke={theme.palette.success.main}
+                      strokeWidth="8"
+                      strokeDasharray={`${76 * 3.14}`}
+                      strokeDashoffset={`${((100 - 76) / 100) * 3.14 * 50}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      76%
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Response Rate
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
 
-            <div className="space-y-4">
-              {responseData.map((data) => (
-                <div key={data.id} className="border-t pt-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium">{data.title}</h4>
-                      <p className="text-sm text-gray-500">{data.time}</p>
-                    </div>
-                    <div className="bg-green-50 p-1 rounded">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <span>Delivered: {data.delivered}</span>
-                    <span className="mx-2">•</span>
-                    <span>Responded: {data.responded}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+              <Stack spacing={2}>
+                {responseData.map((data) => (
+                  <Box
+                    key={data.id}
+                    sx={{
+                      pt: 2,
+                      borderTop: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {data.title}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {data.time}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          bgcolor: theme.palette.success.main,
+                        }}
+                      />
+                    </Box>
+                    <Typography variant="caption" color="textSecondary">
+                      Delivered: {data.delivered} • Responded: {data.responded}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </CardContent>
+          </Card>
 
           {/* AI-Suggested Alerts */}
-          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Bot size={24} className="text-blue-500" />
-              <h2 className="text-lg md:text-xl font-semibold">AI-Suggested Alerts</h2>
-            </div>
-            <div className="space-y-4">
-              {aiSuggestions.map((suggestion) => (
-                <div key={suggestion.id} className="bg-blue-50 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        suggestion.severity === "Moderate"
-                          ? "bg-orange-100 text-orange-600"
-                          : "bg-blue-100 text-blue-600"
-                      }`}
-                    >
-                      {suggestion.severity}
-                    </span>
-                    <span className="text-sm text-gray-500">Confidence: {suggestion.confidence}</span>
-                  </div>
-                  <p className="text-gray-700 mb-3">{suggestion.message}</p>
-                  <button
-                    className="text-blue-600 text-sm font-medium"
-                    onClick={() => handleUseAiSuggestion(suggestion)}
+          <Card>
+            <CardContent>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+              >
+                <Bot size={20} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  AI-Suggested Alerts
+                </Typography>
+              </Box>
+              <Stack spacing={2}>
+                {aiSuggestions.map((suggestion) => (
+                  <Box
+                    key={suggestion.id}
+                    sx={{
+                      p: 2,
+                      bgcolor:
+                        theme.palette.mode === "dark"
+                          ? theme.palette.grey[800]
+                          : theme.palette.info[50],
+                      borderRadius: 1,
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
                   >
-                    Use This
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Chip
+                        label={suggestion.severity}
+                        size="small"
+                        color={
+                          suggestion.severity === "Moderate"
+                            ? "warning"
+                            : "info"
+                        }
+                        variant="outlined"
+                      />
+                      <Typography variant="caption" color="textSecondary">
+                        Confidence: {suggestion.confidence}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                      {suggestion.message}
+                    </Typography>
+                    <Button
+                      size="small"
+                      color="primary"
+                      onClick={() => handleUseAiSuggestion(suggestion)}
+                    >
+                      Use This
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+            </CardContent>
+          </Card>
+        </Stack>
+      </Stack>
 
-      {/* Delete Alert Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Confirm Delete</h3>
-            <p className="mb-6">Are you sure you want to delete this alert? This action cannot be undone.</p>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 border rounded-lg">
-                Cancel
-              </button>
-              <button onClick={confirmDeleteAlert} className="px-4 py-2 bg-red-500 text-white rounded-lg">
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this alert? This action cannot be
+            undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button
+            onClick={confirmDeleteAlert}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* New Alert Modal */}
-      {showNewAlertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Create New Alert</h3>
-            <form onSubmit={handleCreateNewAlert}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Alert Title</label>
-                  <input
-                    type="text"
-                    value={newAlertTitle}
-                    onChange={(e) => setNewAlertTitle(e.target.value)}
-                    placeholder="Enter alert title"
-                    className="w-full p-3 border rounded-lg"
-                    required
-                  />
-                </div>
+      <Dialog
+        open={showNewAlertModal}
+        onClose={() => setShowNewAlertModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Create New Alert</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Stack spacing={2}>
+            <TextField
+              label="Alert Title"
+              value={newAlertTitle}
+              onChange={(e) => setNewAlertTitle(e.target.value)}
+              fullWidth
+              required
+            />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Alert Message</label>
-                  <textarea
-                    value={newAlertMessage}
-                    onChange={(e) => setNewAlertMessage(e.target.value)}
-                    placeholder="Enter alert message"
-                    rows={4}
-                    className="w-full p-3 border rounded-lg"
-                    required
-                  />
-                </div>
+            <TextField
+              label="Alert Message"
+              value={newAlertMessage}
+              onChange={(e) => setNewAlertMessage(e.target.value)}
+              multiline
+              rows={4}
+              fullWidth
+              required
+            />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Alert Type</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setNewAlertType("info")}
-                      className={`p-2 rounded-lg flex items-center justify-center gap-1 ${
-                        newAlertType === "info" ? "bg-blue-100 text-blue-600 border border-blue-300" : "bg-gray-50"
-                      }`}
-                    >
-                      <Info size={16} />
-                      <span>Info</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewAlertType("warning")}
-                      className={`p-2 rounded-lg flex items-center justify-center gap-1 ${
-                        newAlertType === "warning"
-                          ? "bg-yellow-100 text-yellow-600 border border-yellow-300"
-                          : "bg-gray-50"
-                      }`}
-                    >
-                      <AlertTriangle size={16} />
-                      <span>Warning</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewAlertType("error")}
-                      className={`p-2 rounded-lg flex items-center justify-center gap-1 ${
-                        newAlertType === "error" ? "bg-red-100 text-red-600 border border-red-300" : "bg-gray-50"
-                      }`}
-                    >
-                      <AlertTriangle size={16} />
-                      <span>Error</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowNewAlertModal(false)}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!newAlertTitle || !newAlertMessage || sendingAlert}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
-                >
-                  {sendingAlert ? (
-                    <>
-                      <LoadingSpinner size="sm" color="white" />
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <span>Create Alert</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Alert Type
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                {["info", "warning", "error"].map((type) => (
+                  <Button
+                    key={type}
+                    onClick={() => setNewAlertType(type)}
+                    variant={newAlertType === type ? "contained" : "outlined"}
+                    color={type as any}
+                    size="small"
+                    sx={{ flex: 1 }}
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowNewAlertModal(false)}>Cancel</Button>
+          <Button
+            onClick={handleCreateNewAlert}
+            variant="contained"
+            disabled={!newAlertTitle || !newAlertMessage || sendingAlert}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
 }
-
