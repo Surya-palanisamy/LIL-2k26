@@ -36,8 +36,8 @@ import {
 } from "../services/weatherService";
 import LoadingSpinnerModern from "../components/LoadingSpinner";
 import axios from "axios";
-
-
+import Tooltip, { TooltipProps, tooltipClasses } from "@mui/material/Tooltip";
+import { styled } from "@mui/material/styles";
 export default function Dashboard() {
   const { isLoading, refreshData, sendEmergencyBroadcast, user } =
     useAppContext();
@@ -103,9 +103,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchWaterLevel = async () => {
       try {
-        const response = await axios.get(
-          "google.com"
-        );
+        const response = await axios.get("google.com");
         const feeds = response.data.feeds;
         const latestFeed = feeds[feeds.length - 1];
         const level = Math.max(0, Number.parseFloat(latestFeed.field1));
@@ -208,8 +206,20 @@ export default function Dashboard() {
   };
 
   if (isLoading) {
-    return <LoadingSpinnerModern variant="bar-wave" size="md" color="primary" />;
+    return (
+      <LoadingSpinnerModern variant="bar-wave" size="md" color="primary" />
+    );
   }
+  const BootstrapTooltip = styled(({ className, ...props }: TooltipProps) => (
+    <Tooltip {...props} arrow classes={{ popper: className }} />
+  ))(({ theme }) => ({
+    [`& .${tooltipClasses.arrow}`]: {
+      color: theme.palette.common.black,
+    },
+    [`& .${tooltipClasses.tooltip}`]: {
+      backgroundColor: theme.palette.common.black,
+    },
+  }));
 
   // --- Helper: chunk stats into rows of 2
   const statEntries = Object.entries(stats);
@@ -227,7 +237,6 @@ export default function Dashboard() {
           flexDirection: { xs: "column", md: "row" },
           justifyContent: "space-between",
           alignItems: { xs: "flex-start", md: "center" },
-          mb: 3,
           gap: 2,
         }}
       >
@@ -237,38 +246,50 @@ export default function Dashboard() {
         <Stack
           direction="row"
           spacing={2}
-          sx={{ width: { xs: "100%", md: "auto" } }}
+          sx={{ width: { xs: "100%", md: "auto" }, m: 2 }}
         >
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            startIcon={
-              refreshing ? (
-                <CircularProgress size={20} />
-              ) : (
-                <RefreshCw size={18} />
-              )
-            }
-            variant="outlined"
-            sx={{ textTransform: "none" }}
-          >
-            Refresh Data
-          </Button>
-          <Button
-            onClick={() => setShowBroadcastModal(true)}
-            startIcon={<AlertTriangle size={18} />}
-            variant="contained"
-            color="error"
-            sx={{ textTransform: "none", width: { xs: "100%", sm: "auto" } }}
-          >
-            Emergency Broadcast
-          </Button>
+          <BootstrapTooltip title="Click to refresh">
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              startIcon={
+                refreshing ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <RefreshCw size={18} />
+                )
+              }
+              variant="outlined"
+              sx={{
+                textTransform: "capitalize",
+                width: { xs: "90%", sm: "auto" },
+                p: 3,
+              }}
+            >
+              Refresh Data
+            </Button>
+          </BootstrapTooltip>
+          <BootstrapTooltip title="Send a emergency broadcast to all users">
+            <Button
+              onClick={() => setShowBroadcastModal(true)}
+              startIcon={<AlertTriangle size={17} />}
+              variant="contained"
+              color="error"
+              sx={{
+                textTransform: "capitalize",
+                width: { xs: "100%", sm: "auto" },
+                p: 3,
+              }}
+            >
+              Emergency Broadcast
+            </Button>
+          </BootstrapTooltip>
         </Stack>
       </Box>
 
       {/* Filters */}
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mb: 3 }}>
-        <FormControl sx={{ minWidth: 200 }}>
+        <FormControl sx={{ minWidth: 200, p: 1 }}>
           <InputLabel>Location</InputLabel>
           <Select
             value={selectedLocation}
@@ -282,7 +303,7 @@ export default function Dashboard() {
             <MenuItem value="South Bay">South Bay</MenuItem>
           </Select>
         </FormControl>
-        <FormControl sx={{ minWidth: 200 }}>
+        <FormControl sx={{ minWidth: 200 ,p:1}}>
           <InputLabel>Severity</InputLabel>
           <Select
             value={selectedSeverity}

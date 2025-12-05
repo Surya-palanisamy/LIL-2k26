@@ -34,6 +34,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import Notifications from "./components/Notifications";
 import SignInSide from "./sign-in-side/SignInSide";
 import { ThemeModeToggle } from "./shared-theme/ThemeModeToggle";
+import adminAvatar from "./images/admin.png";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAppContext();
@@ -103,7 +104,7 @@ function AppContent() {
       <Routes>
         <Route
           path="/login"
-          element={<SignInSide disableCustomTheme={false} />}
+          element={<SignInSide disableCustomTheme={true} />}
         />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
@@ -146,7 +147,7 @@ function AppContent() {
             onClick={toggleMobileMenu}
             style={{
               padding: "0.5rem",
-              background: "none",
+             
               border: "none",
               cursor: "pointer",
               color: muiTheme.palette.text.primary,
@@ -205,6 +206,8 @@ function AppContent() {
             isActive={location.pathname === "/"}
             onClick={() => setIsMobileMenuOpen(false)}
             theme={muiTheme}
+            
+         
           />
           <NavLink
             to="/map"
@@ -274,11 +277,11 @@ function AppContent() {
                 }}
               >
                 <img
-                  src={user?.avatar || "/placeholder.svg?height=40&width=40"}
+                  src={adminAvatar || user?.avatar}
                   alt={user?.name || "User"}
                   style={{
-                    width: "2rem",
-                    height: "2rem",
+                    width: "40px",
+                    height: "30px",
                     borderRadius: "50%",
                   }}
                 />
