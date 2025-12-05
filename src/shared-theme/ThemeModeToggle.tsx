@@ -1,16 +1,16 @@
 "use client"
 
-import React from "react"
-import { useTheme } from "../context/ThemeContext"
+import { Brightness4, Brightness7, Circle } from "@mui/icons-material";
+import type { PaletteMode } from "@mui/material";
 import {
   IconButton,
-  Menu,
-  MenuItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Menu,
+  MenuItem
 } from "@mui/material";
-import { Brightness4, Brightness7, Circle } from "@mui/icons-material"
-import type { PaletteMode } from "@mui/material"
+import React from "react";
+import { useTheme } from "../context/ThemeContext";
 
 
 export const ThemeModeToggle: React.FC = () => {

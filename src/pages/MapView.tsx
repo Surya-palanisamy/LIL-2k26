@@ -1,57 +1,56 @@
 "use client";
-import React from "react";
-import { useState, useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
-  Search,
-  Info,
-  Navigation2,
-  RefreshCw,
-  X,
-  Maximize2,
-  Minimize2,
-  MapPin,
   AlertTriangle,
-  MapIcon,
-  Layers,
-  TowerControlIcon as Tower,
-  Droplets,
+  ArrowLeft,
+  ArrowRight,
   ArrowUp,
-  Route,
-  Home,
   BarChart3,
   Check,
-  ArrowRight,
-  ArrowLeft,
+  Droplets,
+  Home,
+  Info,
+  Layers,
+  MapIcon,
+  MapPin,
+  Maximize2,
+  Minimize2,
+  Navigation2,
+  RefreshCw,
+  Route,
+  Search,
+  TowerControlIcon as Tower,
+  X,
 } from "lucide-react";
-import { useAppContext } from "../context/AppContext";
-import LoadingSpinner from "../components/LoadingSpinner";
-import * as MapService from "../services/mapService";
+import { useEffect, useRef, useState } from "react";
 import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
   Circle,
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  TileLayer,
   useMap,
 } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { Polyline } from "react-leaflet";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { useAppContext } from "../context/AppContext";
+import * as MapService from "../services/mapService";
 import {
   findSafeRoute,
-  type RouteInstructions,
   formatDistance,
   formatDuration,
+  type RouteInstructions,
 } from "../services/routingservice";
 
 // Fix for default marker icons in react-leaflet
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import tower from "../images/tower.png";
 import newRoad from "../images/new-road.png";
 import blockedRoad from "../images/p-2.png";
 import shelter from "../images/shelter.png";
 import sjf from "../images/sjf.png";
+import tower from "../images/tower.png";
 
 const DefaultIcon = L.icon({
   iconUrl: icon,

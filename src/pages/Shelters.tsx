@@ -1,28 +1,28 @@
 "use client"
-import { useState } from "react"
-import { Building2, Search, Phone, MessageSquare, RefreshCw } from "lucide-react"
 import {
   Box,
   Button,
   Card,
   CardContent,
-  Typography,
+  Chip,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
   Stack,
-  TextField,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
-  IconButton,
-  LinearProgress,
+  TextField,
+  Typography,
   useTheme,
-  InputAdornment,
 } from "@mui/material"
-import { useAppContext } from "../context/AppContext"
+import { Building2, MessageSquare, Phone, RefreshCw, Search } from "lucide-react"
+import { useState } from "react"
 import LoadingSpinner from "../components/LoadingSpinner"
+import { useAppContext } from "../context/AppContext"
 
 export default function Shelters() {
   const { shelters, coordinators, resources, refreshData, isLoading } = useAppContext()

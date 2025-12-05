@@ -1,40 +1,40 @@
 "use client";
 
-import type React from "react";
-import { useState, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Link,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { Box, useTheme } from "@mui/material";
 import {
   Bell,
-  Home,
-  Map,
-  RouteIcon,
   Building2,
-  PhoneCall,
   Droplets,
-  Menu,
-  X,
+  Home,
   LogOut,
+  Map,
+  Menu,
+  PhoneCall,
+  RouteIcon,
+  X,
 } from "lucide-react";
-import { Box, useTheme } from "@mui/material";
-import Dashboard from "./pages/Dashboard";
-import MapView from "./pages/MapView";
-import Alerts from "./pages/Alerts";
-import SafeRoutes from "./pages/SafeRoutes";
-import Shelters from "./pages/Shelters";
-import EmergencyHelp from "./pages/EmergencyHelp";
-import { AppProvider, useAppContext } from "./context/AppContext";
+import type React from "react";
+import { useEffect, useState } from "react";
+import {
+  Link,
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Notifications from "./components/Notifications";
-import SignInSide from "./sign-in-side/SignInSide";
-import { ThemeModeToggle } from "./shared-theme/ThemeModeToggle";
+import { AppProvider, useAppContext } from "./context/AppContext";
 import adminAvatar from "./images/admin.png";
+import Alerts from "./pages/Alerts";
+import Dashboard from "./pages/Dashboard";
+import EmergencyHelp from "./pages/EmergencyHelp";
+import MapView from "./pages/MapView";
+import SafeRoutes from "./pages/SafeRoutes";
+import Shelters from "./pages/Shelters";
+import { ThemeModeToggle } from "./shared-theme/ThemeModeToggle";
+import SignInSide from "./sign-in-side/SignInSide";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAppContext();

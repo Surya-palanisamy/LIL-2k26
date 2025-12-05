@@ -1,11 +1,8 @@
 "use client"
-
-import React from "react"
 import { useState } from "react"
-
-import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet"
 import L, { Icon, type LatLngExpression } from "leaflet"
 import "leaflet/dist/leaflet.css"
+import { Circle, MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
 
 // Fix for default marker icons in react-leaflet
 const defaultIcon = new Icon({

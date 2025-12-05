@@ -1,44 +1,70 @@
 "use client";
-import { useState, useEffect, type FormEvent } from "react";
-import {
-  Droplets,
-  RefreshCw,
-  AlertTriangle,
-  ArrowUp,
-  ArrowDown,
-  MapPin,
-} from "lucide-react";
 import {
   Box,
   Button,
   Card,
   CardContent,
-  Typography,
-  Stack,
-  TextField,
+  CircularProgress,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  Select,
-  MenuItem,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
   useTheme,
-  CircularProgress,
 } from "@mui/material";
+import { XAxis } from "@mui/x-charts/models";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  Droplets,
+  MapPin,
+  RefreshCw,
+} from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAppContext } from "../context/AppContext";
 import {
-  fetchWeatherData,
-  getWeatherIconUrl,
-  type WeatherData,
-  getCurrentLocation,
-} from "../services/weatherService";
-import LoadingSpinnerModern from "../components/LoadingSpinner";
-import axios from "axios";
+  dateAxisFormatter,
+  percentageFormatter,
+  usUnemploymentRate,
+} from "./UnemploymentRate";
+
 import Tooltip, { TooltipProps, tooltipClasses } from "@mui/material/Tooltip";
 import { styled } from "@mui/material/styles";
 import { LineChart } from "@mui/x-charts/LineChart";
+import axios from "axios";
+import LoadingSpinnerModern from "../components/LoadingSpinner";
+import {
+  fetchWeatherData,
+  getCurrentLocation,
+  getWeatherIconUrl,
+  type WeatherData,
+} from "../services/weatherService";
+const xAxis: XAxis<"time">[] = [
+  {
+    dataKey: "date",
+    scaleType: "time",
+    valueFormatter: dateAxisFormatter,
+  },
+];
+const yAxis = [
+  {
+    valueFormatter: percentageFormatter,
+  },
+];
+const series = [
+  {
+    dataKey: "rate",
+    showMark: false,
+    valueFormatter: percentageFormatter,
+  },
+];
 
 export default function Dashboard() {
   const { isLoading, refreshData, sendEmergencyBroadcast, user } =
@@ -101,6 +127,9 @@ export default function Dashboard() {
     predicted: 0,
     timeToPeak: "N/A",
   });
+
+
+
 
   useEffect(() => {
     const fetchWaterLevel = async () => {
@@ -319,7 +348,6 @@ export default function Dashboard() {
           </Select>
         </FormControl>
       </Stack>
-      
 
       {/* Risk Data Cards */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
@@ -542,6 +570,16 @@ export default function Dashboard() {
             </Stack>
           </CardContent>
         </Card>
+      </Stack>
+      <Stack>
+        <LineChart
+          dataset={usUnemploymentRate}
+          xAxis={xAxis}
+          yAxis={yAxis}
+          series={series}
+          height={300}
+          grid={{ vertical: true, horizontal: true }}
+        />
       </Stack>
 
       {/* Emergency Broadcast Dialog */}
