@@ -143,11 +143,12 @@ function AppContent() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <ThemeModeToggle />
           <Notifications />
+
           <button
             onClick={toggleMobileMenu}
             style={{
               padding: "0.5rem",
-             
+              background: "none",
               border: "none",
               cursor: "pointer",
               color: muiTheme.palette.text.primary,
@@ -196,6 +197,9 @@ function AppContent() {
           <Box sx={{ display: { xs: "none", lg: "block" } }}>
             <Notifications />
           </Box>
+          <Box sx={{display: { xs: "none", lg: "block" }}}>
+            <ThemeModeToggle />
+          </Box>
         </Box>
 
         <Box component="nav" sx={{ p: 2, mt: 4, lg: { mt: 0 }, space: 1 }}>
@@ -206,8 +210,6 @@ function AppContent() {
             isActive={location.pathname === "/"}
             onClick={() => setIsMobileMenuOpen(false)}
             theme={muiTheme}
-            
-         
           />
           <NavLink
             to="/map"

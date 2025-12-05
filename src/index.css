@@ -5,10 +5,18 @@
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* MUI color-scheme helpers */
+/* Enhanced MUI color-scheme helpers with better contrast in dark mode */
 html[data-mui-color-scheme="dark"] {
   color-scheme: dark;
 }
+
+html[data-mui-color-scheme="dark"] *,
+html[data-mui-color-scheme="dark"] .MuiPaper-root,
+html[data-mui-color-scheme="dark"] .MuiButton-root,
+html[data-mui-color-scheme="dark"] .MuiTypography-root {
+  color-scheme: dark;
+}
+
 html[data-mui-color-scheme="light"] {
   color-scheme: light;
 }
@@ -22,6 +30,33 @@ html[data-mui-color-scheme="light"] {
 /* Smooth theme transitions for MUI components */
 .MuiPaper-root,
 .MuiButton-root,
-.MuiIconButton-root {
+.MuiIconButton-root,
+.MuiCard-root {
   transition: background-color 0.3s ease, color 0.3s ease !important;
+}
+
+/* Dark mode text improvements */
+html[data-mui-color-scheme="dark"] .MuiTypography-root,
+html[data-mui-color-scheme="dark"] .MuiTableCell-root,
+html[data-mui-color-scheme="dark"] p,
+html[data-mui-color-scheme="dark"] span,
+html[data-mui-color-scheme="dark"] div {
+  color: rgb(229, 231, 235);
+}
+
+/* Dark mode input styling */
+html[data-mui-color-scheme="dark"] .MuiTextField-root .MuiOutlinedInput-root {
+  color: rgb(229, 231, 235);
+}
+
+html[data-mui-color-scheme="dark"] .MuiSelect-root {
+  color: rgb(229, 231, 235);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  /* Mobile adjustments */
+  body {
+    font-size: 14px;
+  }
 }

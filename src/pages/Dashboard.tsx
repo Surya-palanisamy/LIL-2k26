@@ -38,6 +38,8 @@ import LoadingSpinnerModern from "../components/LoadingSpinner";
 import axios from "axios";
 import Tooltip, { TooltipProps, tooltipClasses } from "@mui/material/Tooltip";
 import { styled } from "@mui/material/styles";
+import { LineChart } from "@mui/x-charts/LineChart";
+
 export default function Dashboard() {
   const { isLoading, refreshData, sendEmergencyBroadcast, user } =
     useAppContext();
@@ -303,7 +305,7 @@ export default function Dashboard() {
             <MenuItem value="South Bay">South Bay</MenuItem>
           </Select>
         </FormControl>
-        <FormControl sx={{ minWidth: 200 ,p:1}}>
+        <FormControl sx={{ minWidth: 200, p: 1 }}>
           <InputLabel>Severity</InputLabel>
           <Select
             value={selectedSeverity}
@@ -317,6 +319,7 @@ export default function Dashboard() {
           </Select>
         </FormControl>
       </Stack>
+      
 
       {/* Risk Data Cards */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
@@ -489,6 +492,7 @@ export default function Dashboard() {
                     width: `${(floodLevels.current / 800) * 100}%`,
                   }}
                 />
+
                 <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
                   {floodLevels.current}m
                 </Typography>
@@ -639,6 +643,7 @@ function StatCard({
           </Typography>
         </Box>
       </CardContent>
+        
     </Card>
   );
 }
