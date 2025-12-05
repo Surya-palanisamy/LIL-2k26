@@ -34,8 +34,9 @@ import {
   type WeatherData,
   getCurrentLocation,
 } from "../services/weatherService";
-import LoadingSpinner from "../components/LoadingSpinner";
+import LoadingSpinnerModern from "../components/LoadingSpinner";
 import axios from "axios";
+
 
 export default function Dashboard() {
   const { isLoading, refreshData, sendEmergencyBroadcast, user } =
@@ -103,7 +104,7 @@ export default function Dashboard() {
     const fetchWaterLevel = async () => {
       try {
         const response = await axios.get(
-          "https://api.thingspeak.com/channels/2901817/feeds.json?results=10"
+          "google.com"
         );
         const feeds = response.data.feeds;
         const latestFeed = feeds[feeds.length - 1];
@@ -207,7 +208,7 @@ export default function Dashboard() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen type="dots" />;
+    return <LoadingSpinnerModern variant="bar-wave" size="md" color="primary" />;
   }
 
   // --- Helper: chunk stats into rows of 2
@@ -346,7 +347,11 @@ export default function Dashboard() {
               Current Weather
             </Typography>
             {weatherLoading ? (
-              <LoadingSpinner size="sm" type="pulse" />
+              <LoadingSpinnerModern
+                variant="gradient-ring"
+                size="md"
+                color="#7c3aed"
+              />
             ) : weather ? (
               <Stack spacing={2}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>

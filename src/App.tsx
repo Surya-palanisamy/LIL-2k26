@@ -40,7 +40,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen type="dots" />;
+    return <LoadingSpinner fullScreen />;
   }
 
   if (!isAuthenticated) {
@@ -95,7 +95,7 @@ function AppContent() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen type="dots" />;
+    return <LoadingSpinner fullScreen />;
   }
 
   if (!isAuthenticated) {
