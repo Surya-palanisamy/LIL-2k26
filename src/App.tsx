@@ -204,9 +204,8 @@ function AppContent() {
           sx={{
             position: "absolute",
             bottom: 0,
-            width: "100%",
+            width: "50%",
             p: 2,
-            borderTop: (t) => `1px solid ${t.palette.divider}`,
             bgcolor: "background.paper",
           }}
         >
@@ -218,23 +217,11 @@ function AppContent() {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box
-                sx={{
-                  bgcolor: (t: any) =>
-                    t.palette.mode === "dark"
-                      ? t.palette.grey[700]
-                      : t.palette.grey[300],
-                  borderRadius: "50%",
-                  p: 0.25,
-                }}
-              >
-                <div
-                  
-                >
+             
+
+                <div>
                   <ProfileMenu />
                 </div>
-              </Box>
-
               <Box>
                 <Box
                   sx={{

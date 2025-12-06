@@ -9,7 +9,6 @@ import {
   ListItemText,
   Menu,
   MenuItem,
-  Paper,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -80,9 +79,7 @@ export default function ProfileMenu({ userProp }: { userProp?: User }) {
             width: 36,
             height: 36,
             fontWeight: 700,
-            border: `2px solid ${
-              isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)"
-            }`,
+            
             bgcolor: isDark ? theme.palette.grey[800] : undefined,
           }}
         >
@@ -184,7 +181,12 @@ export default function ProfileMenu({ userProp }: { userProp?: User }) {
         >
           <ListItemText
             primary="Profile"
-            primaryTypographyProps={{ fontSize: 13, color: itemTextColor }}
+            slotProps={{
+              primary: {
+                // use sx to style the inner Typography
+                sx: { fontSize: 13, color: itemTextColor },
+              },
+            }}
           />
         </MenuItem>
 
@@ -200,7 +202,11 @@ export default function ProfileMenu({ userProp }: { userProp?: User }) {
         >
           <ListItemText
             primary="Settings"
-            primaryTypographyProps={{ fontSize: 13, color: itemTextColor }}
+            slotProps={{
+              primary: {
+                sx: { fontSize: 13, color: itemTextColor },
+              },
+            }}
           />
         </MenuItem>
 
@@ -215,10 +221,14 @@ export default function ProfileMenu({ userProp }: { userProp?: User }) {
         >
           <ListItemText
             primary="Log out"
-            primaryTypographyProps={{
-              fontSize: 13,
-              color: theme.palette.error.main,
-              fontWeight: 700,
+            slotProps={{
+              primary: {
+                sx: {
+                  fontSize: 13,
+                  color: theme.palette.error.main,
+                  fontWeight: 700,
+                },
+              },
             }}
           />
         </MenuItem>
