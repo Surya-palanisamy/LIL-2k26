@@ -590,10 +590,11 @@ export default function SafeRoutes() {
     if (pathIds.length > 0 || startNodeId === endNodeId)
       pathIds.unshift(startNodeId);
 
-    const coords = pathIds.map((id) => {
+    const coords: [number, number][] = pathIds.map((id) => {
       const n = roadNetwork.find((x) => x.id === id);
-      return n ? n.coordinates : [0, 0];
+      return n ? n.coordinates : ([0, 0] as [number, number]);
     });
+
     return coords;
   };
 
@@ -623,13 +624,7 @@ export default function SafeRoutes() {
 
     const routingControl = L.Routing.control({
       plan: createPlan(),
-      lineOptions: {
-        styles: [
-          { color, opacity: 0.9, weight: 6 },
-          { color: "#ffffff", opacity: 0.3, weight: 2 },
-        ],
-        addWaypoints: false,
-      },
+      
       router: L.Routing.osrmv1({
         serviceUrl: "https://router.project-osrm.org/route/v1",
         profile: "driving",
@@ -939,7 +934,6 @@ export default function SafeRoutes() {
     return matchesSearch && matchesDistrict;
   });
 
-  /* ---------- Render (keeps your exact structure/alignment) ---------- */
   return (
     <div style={{ padding: 16 }}>
       {/* Stats */}
@@ -1343,7 +1337,8 @@ export default function SafeRoutes() {
               zoom={mapZoom}
               style={{ height: "100%", width: "100%" }}
               zoomControl={false}
-              whenCreated={(map) => {
+              whenReady={(event) => {
+                const map = event.target;
                 mapRef.current = map;
                 map.on("click", handleMapClick);
               }}

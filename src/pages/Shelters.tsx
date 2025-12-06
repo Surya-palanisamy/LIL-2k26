@@ -62,7 +62,7 @@ export default function Shelters() {
   ]
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen type="dots" />
+    return <LoadingSpinner fullScreen  />
   }
 
   const getStatusColor = (status: string) => {
@@ -94,9 +94,22 @@ export default function Shelters() {
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           Relief Connect
         </Typography>
-        <Stack direction="row" spacing={2} sx={{ width: { xs: "100%", md: "auto" } }}>
-          <IconButton onClick={handleRefresh} disabled={refreshing} size="medium">
-            <RefreshCw size={20} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ width: { xs: "100%", md: "auto" } }}
+        >
+          <IconButton
+            onClick={handleRefresh}
+            disabled={refreshing}
+            size="medium"
+          >
+            <RefreshCw
+              size={20}
+              style={{
+                animation: refreshing ? "spin 1s linear infinite" : "none",
+              }}
+            />
           </IconButton>
         </Stack>
       </Box>
@@ -106,9 +119,19 @@ export default function Shelters() {
         {shelterStats.map((stat, index) => (
           <Card key={index} sx={{ flex: 1 }}>
             <CardContent>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
                 <Box>
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    sx={{ mb: 1 }}
+                  >
                     {stat.title}
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -164,11 +187,10 @@ export default function Shelters() {
           />
         </Box>
 
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxHeight: 440, bgcolor: "transparent" }}>
+          <Table stickyHeader size="medium" aria-label="shelters table">
             <TableHead>
               <TableRow
-                sx={{ bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[50] }}
               >
                 <TableCell>Shelter Name</TableCell>
                 <TableCell>Location</TableCell>
@@ -176,41 +198,65 @@ export default function Shelters() {
                 <TableCell>Status</TableCell>
                 <TableCell>Resources</TableCell>
                 <TableCell>Contact</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
+
             <TableBody>
-              {filteredShelters.map((shelter, index) => (
-                <TableRow key={index}>
-                  <TableCell sx={{ fontWeight: 500 }}>{shelter.name}</TableCell>
-                  <TableCell>{shelter.location}</TableCell>
-                  <TableCell>{shelter.capacity}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={shelter.status}
-                      color={getStatusColor(shelter.status)}
-                      variant="outlined"
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={shelter.resources}
-                      color={
-                        shelter.resources === "Adequate" ? "success" : shelter.resources === "Low" ? "warning" : "error"
-                      }
-                      variant="outlined"
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{shelter.contact}</TableCell>
-                  <TableCell>
-                    <Button size="small" color="primary">
-                      Manage
-                    </Button>
+              {filteredShelters.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    sx={{ py: 4, textAlign: "center", color: "text.secondary" }}
+                  >
+                    No shelters found.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredShelters.map((shelter, index) => (
+                  <TableRow key={index} hover>
+                    <TableCell sx={{ fontWeight: 500, color: "text.primary" }}>
+                      {shelter.name}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.primary" }}>
+                      {shelter.location}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.primary" }}>
+                      {shelter.capacity}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={shelter.status}
+                        color={getStatusColor(shelter.status)}
+                        variant="outlined"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={shelter.resources}
+                        color={
+                          shelter.resources === "Adequate"
+                            ? "success"
+                            : shelter.resources === "Low"
+                            ? "warning"
+                            : "error"
+                        }
+                        variant="outlined"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: "text.primary" }}>
+                      {shelter.contact}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button size="small" color="primary">
+                        Manage
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -225,7 +271,9 @@ export default function Shelters() {
           {resources.map((resource, index) => (
             <Card key={index} sx={{ flex: 1 }}>
               <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+                >
                   {resource.icon}
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -241,14 +289,17 @@ export default function Shelters() {
                   value={resource.percentage}
                   sx={{
                     mb: 2,
-                    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[700] : theme.palette.grey[200],
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? theme.palette.grey[700]
+                        : theme.palette.grey[200],
                     "& .MuiLinearProgress-bar": {
                       backgroundColor:
                         resource.percentage > 70
                           ? theme.palette.success.main
                           : resource.percentage > 40
-                            ? theme.palette.warning.main
-                            : theme.palette.error.main,
+                          ? theme.palette.warning.main
+                          : theme.palette.error.main,
                     },
                   }}
                 />
@@ -270,7 +321,9 @@ export default function Shelters() {
           {coordinators.map((coordinator, index) => (
             <Card key={index} sx={{ flex: 1 }}>
               <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
+                >
                   <img
                     src={coordinator.avatar || "/placeholder.svg"}
                     alt={coordinator.name}
@@ -294,10 +347,21 @@ export default function Shelters() {
                   {coordinator.shelter}
                 </Typography>
                 <Stack direction="row" spacing={1}>
-                  <Button startIcon={<Phone size={16} />} variant="contained" size="small" sx={{ flex: 1 }}>
+                  <Button
+                    startIcon={<Phone size={16} />}
+                    variant="outlined"
+                    size="small"
+                    sx={{ flex: 1 ,color:"red"}}
+
+                  >
                     Call
                   </Button>
-                  <Button startIcon={<MessageSquare size={16} />} variant="outlined" size="small" sx={{ flex: 1 }}>
+                  <Button
+                    startIcon={<MessageSquare size={16} />}
+                    variant="outlined"
+                    size="small"
+                    sx={{ flex: 1 }}
+                  >
                     Message
                   </Button>
                 </Stack>
@@ -307,5 +371,5 @@ export default function Shelters() {
         </Stack>
       </Box>
     </Box>
-  )
+  );
 }

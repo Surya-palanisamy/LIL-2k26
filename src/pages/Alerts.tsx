@@ -202,7 +202,7 @@ export default function Alerts() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen type="dots" />;
+    return <LoadingSpinner fullScreen />;
   }
 
   const getStatusColor = (status: string) => {
@@ -305,14 +305,7 @@ export default function Alerts() {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow
-                    sx={{
-                      bgcolor:
-                        theme.palette.mode === "dark"
-                          ? theme.palette.grey[800]
-                          : theme.palette.grey[50],
-                    }}
-                  >
+                  <TableRow sx={{ color: "red" }}>
                     <TableCell>Status</TableCell>
                     <TableCell>Title</TableCell>
                     <TableCell>Risk Level</TableCell>
@@ -395,9 +388,7 @@ export default function Alerts() {
                         <Button
                           key={type}
                           onClick={() => setNotificationType(type)}
-                          variant={
-                            notificationType === type ? "contained" : "outlined"
-                          }
+                          variant={"outlined"}
                           sx={{ flex: 1 }}
                         >
                           {type}
@@ -419,7 +410,6 @@ export default function Alerts() {
                   label="Message Content"
                   value={messageContent}
                   onChange={(e) => setMessageContent(e.target.value)}
-                  multiline
                   rows={4}
                   fullWidth
                   required
@@ -428,10 +418,6 @@ export default function Alerts() {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor:
-                      theme.palette.mode === "dark"
-                        ? theme.palette.grey[800]
-                        : theme.palette.grey[50],
                     borderRadius: 1,
                     display: "flex",
                     alignItems: "center",

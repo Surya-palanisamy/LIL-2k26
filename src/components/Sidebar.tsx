@@ -1,4 +1,5 @@
 "use client";
+import type React from "react";
 import {
   Box,
   Collapse,
@@ -7,6 +8,12 @@ import {
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  Avatar,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider,
+  Typography,
   useTheme,
 } from "@mui/material";
 import type { LucideIcon } from "lucide-react";
@@ -17,12 +24,16 @@ import {
   ChevronUp,
   LayoutDashboard,
   LifeBuoy,
-  Map as MapIcon,
+  MapIcon,
   PhoneCall,
-  Route as RouteIcon,
+  RouteIcon,
+  LogOut,
+  Settings,
+  User,
 } from "lucide-react";
 import { useState } from "react";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
 const ACTIVE_COLOR = "#6E4CF9";
 
@@ -32,7 +43,13 @@ type NavItem = {
   icon: LucideIcon;
 };
 
-function NavIcon({ icon: Icon, active }: { icon: LucideIcon; active: boolean }) {
+function NavIcon({
+  icon: Icon,
+  active,
+}: {
+  icon: LucideIcon;
+  active: boolean;
+}) {
   const theme = useTheme();
   const color = active
     ? "#ffffff"
@@ -46,7 +63,29 @@ function NavIcon({ icon: Icon, active }: { icon: LucideIcon; active: boolean }) 
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const theme = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAppContext();
   const [openGeneral, setOpenGeneral] = useState(true);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const profileMenuOpen = Boolean(anchorEl);
+
+  const handleProfileMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(e.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMenuSelect = (route: string) => {
+    handleProfileMenuClose();
+    if (route === "/logout") {
+      logout();
+      navigate("/login");
+      return;
+    }
+    navigate(route);
+  };
 
   const dashboards: NavItem[] = [
     { label: "Dashboard", to: "/", icon: LayoutDashboard },
@@ -71,20 +110,165 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       ? "hsl(220, 10%, 78%)"
       : "hsl(222, 28%, 32%)";
 
+  const isDark = theme.palette.mode === "dark";
+  const userInitials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "U";
+
   return (
     <Box
       sx={{
         width: 260,
-        px: 1.5,
-        pt: 2,
-        pb: 2,
+       
         display: "flex",
         flexDirection: "column",
         gap: 1.5,
       }}
       className="app-sidebar"
     >
-      {/* Top section: Dashboards / Overview */}
+      <Box sx={{ mb: 2 }}>
+        <IconButton
+          onClick={handleProfileMenuOpen}
+          sx={{
+            width: "100%",
+            justifyContent: "flex-start",
+            p: 1,
+            borderRadius: 2,
+            bgcolor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+            display: "flex",
+            gap: 1.5,
+            transition: "all 0.18s ease-out",
+          }}
+          aria-controls={profileMenuOpen ? "profile-menu" : undefined}
+          aria-haspopup="true"
+          aria-expanded={profileMenuOpen ? "true" : undefined}
+        >
+          <Avatar
+            sx={{
+              width: 40,
+              height: 40,
+              fontWeight: 700,
+              fontSize: 14,
+              bgcolor: isDark
+                ? theme.palette.grey[800]
+                : theme.palette.primary.light,
+              color: isDark ? "white" : "white",
+            }}
+          >
+            {userInitials}
+          </Avatar>
+          <Box sx={{ flex: 1, textAlign: "left", minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {user?.name || "Admin User"}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: theme.palette.text.secondary,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {user?.role || "Admin"}
+            </Typography>
+          </Box>
+        </IconButton>
+
+        <Menu
+          id="profile-menu"
+          anchorEl={anchorEl}
+          open={profileMenuOpen}
+          onClose={handleProfileMenuClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          PaperProps={{
+            elevation: 10,
+            sx: {
+              width: 220,
+              borderRadius: 2,
+              overflow: "hidden",
+              bgcolor: isDark ? "#0b0e12" : theme.palette.background.paper,
+              color: theme.palette.text.primary,
+              boxShadow: theme.shadows[12],
+              border: `1px solid ${
+                isDark ? "rgba(255,255,255,0.04)" : theme.palette.divider
+              }`,
+            },
+          }}
+        >
+          <MenuItem
+            onClick={() => handleMenuSelect("/profile")}
+            sx={{
+              px: 2,
+              py: 1.1,
+              bgcolor: "transparent",
+              "&:hover": {
+                bgcolor: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+              },
+            }}
+          >
+            <User size={18} style={{ marginRight: 12 }} />
+            <Typography sx={{ fontSize: 13 }}>Profile</Typography>
+          </MenuItem>
+
+          <MenuItem
+            onClick={() => handleMenuSelect("/settings")}
+            sx={{
+              px: 2,
+              py: 1.1,
+              bgcolor: "transparent",
+              "&:hover": {
+                bgcolor: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+              },
+            }}
+          >
+            <Settings size={18} style={{ marginRight: 12 }} />
+            <Typography sx={{ fontSize: 13 }}>Settings</Typography>
+          </MenuItem>
+
+          <Divider sx={{ my: 0.5 }} />
+
+          <MenuItem
+            onClick={() => handleMenuSelect("/logout")}
+            sx={{
+              px: 2,
+              py: 1.1,
+              bgcolor: "transparent",
+              "&:hover": {
+                bgcolor: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+              },
+            }}
+          >
+            <LogOut
+              size={18}
+              style={{ marginRight: 12, color: theme.palette.error.main }}
+            />
+            <Typography
+              sx={{
+                fontSize: 13,
+                color: theme.palette.error.main,
+                fontWeight: 600,
+              }}
+            >
+              Log out
+            </Typography>
+          </MenuItem>
+        </Menu>
+      </Box>
+
       <List
         subheader={
           <ListSubheader
@@ -103,7 +287,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           >
             Overview
           </ListSubheader>
-        } 
+        }
       >
         {dashboards.map((item) => {
           const active = location.pathname === item.to;
@@ -168,7 +352,6 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </List>
 
-      {/* General / Support section */}
       <List
         subheader={
           <ListSubheader

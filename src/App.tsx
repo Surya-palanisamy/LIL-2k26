@@ -1,8 +1,9 @@
 "use client";
 
-import { Avatar, Box, Button, useTheme } from "@mui/material";
+import { Box, Button, useTheme } from "@mui/material";
 import { Droplets, Menu, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -24,6 +25,8 @@ import SafeRoutes from "./pages/SafeRoutes";
 import Shelters from "./pages/Shelters";
 import SignInSide from "./sign-in-side/SignInSide";
 import ProfileMenu from "./components/ProfileMenu";
+import SettingsPage from "./pages/SettingsPage";
+
 /* ProtectedRoute kept as-is */
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAppContext();
@@ -217,11 +220,9 @@ function AppContent() {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-             
-
-                <div>
-                  <ProfileMenu />
-                </div>
+              <div>
+                <ProfileMenu />
+              </div>
               <Box>
                 <Box
                   sx={{
@@ -239,8 +240,6 @@ function AppContent() {
                 </Box>
               </Box>
             </Box>
-
-            
           </Box>
         </Box>
       </Box>
@@ -299,6 +298,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <EmergencyHelp />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />
