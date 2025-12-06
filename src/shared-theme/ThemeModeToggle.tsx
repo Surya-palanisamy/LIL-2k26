@@ -9,7 +9,12 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
-import { Brightness4, Brightness7, Circle } from "@mui/icons-material";
+import {
+  WbSunny,
+  DarkMode,
+  Circle,
+  SettingsBrightness,
+} from "@mui/icons-material";
 import type { PaletteMode } from "@mui/material";
 import { useTheme } from "../context/ThemeContext";
 
@@ -23,9 +28,16 @@ export const ThemeModeToggle: React.FC = () => {
 
   const handleClose = () => setAnchorEl(null);
 
-  const handleSetTheme = (newMode: PaletteMode) => {
-    setTheme(newMode);
+  const handleSetTheme = (newMode: PaletteMode | "system") => {
+    setTheme(newMode as PaletteMode);
     handleClose();
+  };
+
+  // Auto-pick icon based on current theme
+  const renderIcon = () => {
+    if (mode === "dark") return <WbSunny sx={{ transition: "0.3s" }} />;
+    if (mode === "light") return <DarkMode sx={{ transition: "0.3s" }} />;
+    return <SettingsBrightness sx={{ transition: "0.3s" }} />; // system mode icon
   };
 
   return (
@@ -41,13 +53,9 @@ export const ThemeModeToggle: React.FC = () => {
             bgcolor: "action.hover",
           },
         }}
-        title="Toggle theme"
+        title="Theme options"
       >
-        {mode === "dark" ? (
-          <Brightness7 sx={{ transition: "0.3s" }} />
-        ) : (
-          <Brightness4 sx={{ transition: "0.3s" }} />
-        )}
+        {renderIcon()}
       </IconButton>
 
       <Menu
@@ -57,19 +65,30 @@ export const ThemeModeToggle: React.FC = () => {
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         PaperProps={{
-          sx: { borderRadius: 3, mt: 1, minWidth: 160, boxShadow: 4 },
+          sx: { borderRadius: 3, mt: 1, minWidth: 170, boxShadow: 4 },
         }}
       >
+        {/* System Mode */}
+        <MenuItem
+          selected={mode === "system"}
+          onClick={() => handleSetTheme("system")}
+        >
+          <ListItemIcon>
+            <SettingsBrightness fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="System Default" />
+          {mode === "system" && (
+            <Circle sx={{ fontSize: 9, ml: 1, color: "primary.main" }} />
+          )}
+        </MenuItem>
+
+        {/* Light Mode */}
         <MenuItem
           selected={mode === "light"}
           onClick={() => handleSetTheme("light")}
-          sx={{
-            "&.Mui-selected": { bgcolor: "action.selected" },
-            "&:hover": { bgcolor: "action.hover" },
-          }}
         >
           <ListItemIcon>
-            <Brightness7 fontSize="small" />
+            <WbSunny fontSize="small" />
           </ListItemIcon>
           <ListItemText primary="Light Mode" />
           {mode === "light" && (
@@ -77,16 +96,13 @@ export const ThemeModeToggle: React.FC = () => {
           )}
         </MenuItem>
 
+        {/* Dark Mode */}
         <MenuItem
           selected={mode === "dark"}
           onClick={() => handleSetTheme("dark")}
-          sx={{
-            "&.Mui-selected": { bgcolor: "action.selected" },
-            "&:hover": { bgcolor: "action.hover" },
-          }}
         >
           <ListItemIcon>
-            <Brightness4 fontSize="small" />
+            <DarkMode fontSize="small" />
           </ListItemIcon>
           <ListItemText primary="Dark Mode" />
           {mode === "dark" && (
