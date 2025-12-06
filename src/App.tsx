@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, Box, Button, useTheme } from "@mui/material";
-import { Droplets, LogOut, Menu, X } from "lucide-react";
+import { Droplets, Menu, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import {
   Navigate,
@@ -15,7 +15,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import Notifications from "./components/Notifications";
 import Sidebar from "./components/Sidebar";
 import { AppProvider, useAppContext } from "./context/AppContext";
-import adminAvatar from "./images/admin.png";
+
 import Alerts from "./pages/Alerts";
 import Dashboard from "./pages/Dashboard";
 import EmergencyHelp from "./pages/EmergencyHelp";
@@ -23,7 +23,7 @@ import MapView from "./pages/MapView";
 import SafeRoutes from "./pages/SafeRoutes";
 import Shelters from "./pages/Shelters";
 import SignInSide from "./sign-in-side/SignInSide";
-
+import ProfileMenu from "./components/ProfileMenu";
 /* ProtectedRoute kept as-is */
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAppContext();
@@ -131,7 +131,6 @@ function AppContent() {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          
           <ThemeToggler />
           <Notifications />
           <Button
@@ -193,9 +192,8 @@ function AppContent() {
             }}
           >
             <Notifications />
-           
+
             <ThemeToggler />
-           
           </Box>
         </Box>
 
@@ -230,11 +228,11 @@ function AppContent() {
                   p: 0.25,
                 }}
               >
-                <Avatar
-                  src={adminAvatar || user?.avatar}
-                  alt={user?.name || "User"}
-                  sx={{ width: 40, height: 40 }}
-                />
+                <div
+                  
+                >
+                  <ProfileMenu />
+                </div>
               </Box>
 
               <Box>
@@ -255,20 +253,7 @@ function AppContent() {
               </Box>
             </Box>
 
-            <Button
-              onClick={logout}
-              variant="text"
-              sx={{
-                color: "text.secondary",
-                minWidth: "auto",
-                p: 0.75,
-                borderRadius: 1,
-              }}
-              aria-label="Logout"
-              title="Logout"
-            >
-              <LogOut size={20} />
-            </Button>
+            
           </Box>
         </Box>
       </Box>
