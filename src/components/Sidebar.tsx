@@ -1,22 +1,26 @@
 "use client";
 
-import { NightShelterOutlined as BuildingIcon, Home as HomeIcon, MapOutlined as MapIcon, Route as RouteIcon } from "@mui/icons-material";
 import {
-    Box,
-    Collapse,
-    List,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    ListSubheader,
-    useTheme,
+  NightShelterOutlined as BuildingIcon,
+  Home as HomeIcon,
+  MapOutlined as MapIcon,
+  Route as RouteIcon,
+} from "@mui/icons-material";
+import {
+  Box,
+  Collapse,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
+  useTheme,
 } from "@mui/material";
 import {
-    Bell as BellIcon,
-
-    ChevronDown,
-    ChevronUp,
-    Phone as PhoneIcon,
+  Bell as BellIcon,
+  ChevronDown,
+  ChevronUp,
+  Phone as PhoneIcon,
 } from "lucide-react";
 import React, { useState } from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
@@ -56,8 +60,8 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { label: "Dashboard", to: "/", icon: <HomeIcon /> },
     { label: "Flood Map", to: "/map", icon: <MapIcon /> },
     { label: "Alerts", to: "/alerts", icon: <BellIcon /> },
-    { label: "Safe Routes", to: "/safe-routes", icon: <RouteIcon  /> },
-    { label: "Shelters", to: "/shelters", icon: <BuildingIcon  /> },
+    { label: "Safe Routes", to: "/safe-routes", icon: <RouteIcon /> },
+    { label: "Shelters", to: "/shelters", icon: <BuildingIcon /> },
   ];
 
   const general = [
@@ -85,15 +89,15 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               mb: 1,
               color:
                 theme.palette.mode === "dark"
-                  ? "hsl(220,15%,70%)"
-                  : "hsl(220,20%,50%)",
+                  ? "hsla(61, 49%, 26%, 1.00)"
+                  : "hsla(221, 28%, 36%, 1.00)",
               fontSize: 12,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: 0.6,
             }}
           >
-            Dashboards
+            
           </ListSubheader>
         }
       >
