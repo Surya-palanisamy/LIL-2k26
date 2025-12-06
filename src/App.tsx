@@ -1,17 +1,16 @@
-// src/App.tsx
 "use client";
 
+import { Avatar, Box, Button, useTheme } from "@mui/material";
+import { Droplets, LogOut, Menu, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { Box, useTheme, Avatar, Button } from "@mui/material";
-import { Droplets, Menu, X, LogOut } from "lucide-react";
 import {
+  Navigate,
+  Route,
   BrowserRouter as Router,
   Routes,
-  Route,
-  Navigate,
   useLocation,
 } from "react-router-dom";
-
+import ThemeToggler from "./components/ThemeToggler";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Notifications from "./components/Notifications";
 import Sidebar from "./components/Sidebar";
@@ -23,7 +22,6 @@ import EmergencyHelp from "./pages/EmergencyHelp";
 import MapView from "./pages/MapView";
 import SafeRoutes from "./pages/SafeRoutes";
 import Shelters from "./pages/Shelters";
-import { ThemeModeToggle } from "./shared-theme/ThemeModeToggle";
 import SignInSide from "./sign-in-side/SignInSide";
 
 /* ProtectedRoute kept as-is */
@@ -133,9 +131,9 @@ function AppContent() {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <ThemeModeToggle />
+          
+          <ThemeToggler />
           <Notifications />
-
           <Button
             onClick={toggleMobileMenu}
             aria-label="Toggle menu"
@@ -195,7 +193,9 @@ function AppContent() {
             }}
           >
             <Notifications />
-            <ThemeModeToggle />
+           
+            <ThemeToggler />
+           
           </Box>
         </Box>
 

@@ -79,3 +79,24 @@ html[data-mui-color-scheme="light"] .app-sidebar a * {
   stroke: inherit !important;
   fill: inherit !important;
 }
+
+/* View transition helpers (modern browsers) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  /* prevent default MUI mixing; keep normal blending */
+  animation: none;
+  mix-blend-mode: normal;
+  /* ensure the pseudo-element sits correctly */
+  will-change: clip-path, opacity, transform;
+}
+
+/* fallback: if no view-transition support, nothing here is applied */
+
+/* Optional: a little smoothing for color changes */
+html[data-mui-color-scheme="dark"] {
+  /* (optional) tweak transitionable properties when switching; be conservative */
+  transition: background-color 200ms linear, color 200ms linear;
+}
+html[data-mui-color-scheme="light"] {
+  transition: background-color 200ms linear, color 200ms linear;
+}
