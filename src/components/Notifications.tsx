@@ -1,7 +1,6 @@
-"use client";
-
 import {
   Box,
+  Button,
   ClickAwayListener,
   IconButton,
   Button as MuiButton,
@@ -106,8 +105,15 @@ export default function Notifications() {
   };
 
   return (
-    <Box sx={{ position: "relative", display: "inline-block" }}>
-      <IconButton
+    <Box
+      sx={{
+        position: "relative",
+        display: "inline-block",
+        border: "none !important",
+        bgcolor: "transparent !important",
+      }}
+    >
+      <Button
         ref={buttonRef as any}
         aria-label="Notifications"
         onClick={() => setOpen((s) => !s)}
@@ -115,9 +121,6 @@ export default function Notifications() {
           width: 40,
           height: 40,
           borderRadius: "50%",
-          color: "text.primary",
-          "&:hover": { bgcolor: "action.hover" },
-          bgcolor: open ? "action.selected" : "transparent",
         }}
         title="Notifications"
       >
@@ -145,9 +148,7 @@ export default function Notifications() {
             {unreadCount > 9 ? "9+" : unreadCount}
           </Box>
         )}
-      </IconButton>
-
-      {/* Popper anchored to the button; placement bottom-end on desktop, full-screen-like on mobile */}
+      </Button>
       <Popper
         open={open}
         anchorEl={buttonRef.current}

@@ -1,5 +1,3 @@
-"use client";
-
 import { useTheme } from "@mui/material/styles";
 import L from "leaflet";
 import "leaflet-routing-machine";
@@ -18,7 +16,7 @@ import {
   RefreshCw,
   Search,
   Users,
-  X
+  X,
 } from "lucide-react";
 import PriorityQueue from "priorityqueuejs";
 import React, { useEffect, useRef, useState, type FormEvent } from "react";
@@ -624,7 +622,7 @@ export default function SafeRoutes() {
 
     const routingControl = L.Routing.control({
       plan: createPlan(),
-      
+
       router: L.Routing.osrmv1({
         serviceUrl: "https://router.project-osrm.org/route/v1",
         profile: "driving",

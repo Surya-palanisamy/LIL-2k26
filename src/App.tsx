@@ -1,5 +1,3 @@
-"use client";
-
 import { Box, Button, useTheme } from "@mui/material";
 import { Droplets, Menu, X } from "lucide-react";
 import type React from "react";
@@ -195,18 +193,12 @@ function AppContent() {
             }}
           >
             <Notifications />
-
             <ThemeToggler />
           </Box>
         </Box>
-
         <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
-
-        {/* Footer / profile */}
-        
       </Box>
 
-      {/* Main content */}
       <Box
         sx={{
           marginLeft: { xs: 0, lg: "256px" },

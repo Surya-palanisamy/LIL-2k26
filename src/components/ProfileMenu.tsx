@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from "react";
 import {
   Avatar,
@@ -79,7 +77,7 @@ export default function ProfileMenu({ userProp }: { userProp?: User }) {
             width: 36,
             height: 36,
             fontWeight: 700,
-            
+
             bgcolor: isDark ? theme.palette.grey[800] : undefined,
           }}
         >

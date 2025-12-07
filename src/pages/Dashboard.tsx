@@ -1,5 +1,3 @@
-"use client";
-
 import {
   alpha,
   Box,
@@ -121,7 +119,6 @@ export default function Dashboard() {
       2
     );
     if (predictedLevel > threshold) {
-      
     }
     return {
       time: `${String(i * 3).padStart(2, "0")}:00`,

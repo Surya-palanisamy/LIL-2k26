@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 import { flushSync } from "react-dom";
