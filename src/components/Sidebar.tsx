@@ -257,7 +257,12 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                       ? "0 10px 30px rgba(0,0,0,0.7)"
                       : "0 10px 30px rgba(15,23,42,0.18)",
                 }),
-               
+                "&:hover": {
+                  backgroundColor: active
+                    ? "transparent"
+                    : theme.palette.action.hover,
+                  transform: active ? "translateY(-1px)" : "none",
+                },
               }}
             >
               <ListItemIcon
@@ -320,7 +325,10 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               theme.palette.mode === "dark"
                 ? "hsl(220, 10%, 75%)"
                 : "hsl(220, 18%, 40%)",
-           
+            borderRadius: 2,
+            "&:hover": {
+              bgcolor: theme.palette.action.hover,
+            },
           }}
           onClick={() => setOpenGeneral((s) => !s)}
         >
@@ -383,7 +391,11 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                         ? "0 8px 24px rgba(0,0,0,0.7)"
                         : "0 8px 24px rgba(15,23,42,0.16)",
                   }),
-                  
+                  "&:hover": {
+                    backgroundColor: active
+                      ? "transparent"
+                      : theme.palette.action.hover,
+                  },
                 }}
               >
                 <ListItemIcon
