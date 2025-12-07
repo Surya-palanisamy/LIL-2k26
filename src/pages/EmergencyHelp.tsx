@@ -172,7 +172,7 @@ export default function EmergencyHelp() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen type="dots" />;
+    return <LoadingSpinner  />;
   }
 
   return (
@@ -384,13 +384,10 @@ export default function EmergencyHelp() {
               <TableHead>
                 <TableRow
                   sx={{
-                    bgcolor:
-                      theme.palette.mode === "dark"
-                        ? theme.palette.grey[800]
-                        : theme.palette.grey[50],
+                  
                   }}
                 >
-                  <TableCell>Team ID</TableCell>
+                  <TableCell>Team IDs</TableCell>
                   <TableCell>Team Name</TableCell>
                   <TableCell>Location</TableCell>
                   <TableCell>Status</TableCell>

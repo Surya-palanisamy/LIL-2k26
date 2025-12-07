@@ -83,9 +83,9 @@ html[data-mui-color-scheme="light"] .app-sidebar a * {
   will-change: clip-path, opacity, transform;
 }
 
-
+/* ---------- Fix typo (was invalid) ---------- */
 html[data-mui-color-scheme="dark"] {
-  transition: background-co lor 200ms linear, color 200ms linear;
+  transition: background-color 200ms linear, color 200ms linear;
 }
 html[data-mui-color-scheme="light"] {
   transition: background-color 200ms linear, color 200ms linear;
@@ -109,4 +109,69 @@ html[data-mui-color-scheme="dark"] .MuiMenuItem-root .MuiListItemText-primary {
 html[data-mui-color-scheme="dark"] .MuiMenu-paper .profile-menu-header,
 html[data-mui-color-scheme="dark"] .MuiMenu-paper .profile-menu-header * {
   color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ---------- Force-transparent hover for key MUI controls ---------- */
+/* Buttons & icon buttons (global) */
+.MuiButton-root,
+.MuiIconButton-root {
+  min-width: 0 !important;       /* avoid extra horizontal space */
+  padding: 0 !important;         /* optional: remove extra internal padding */
+}
+
+/* Remove background on hover / focus for primary interactive components */
+.MuiButton-root:hover,
+.MuiIconButton-root:hover,
+.MuiButton-root:focus,
+.MuiIconButton-root:focus {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar list items */
+.app-sidebar .MuiListItemButton-root,
+.app-sidebar .MuiListItem-root {
+  background-color: transparent !important;
+  transition: background-color 0.2s ease !important;
+}
+
+/* Prevent hover fill for sidebar items */
+.app-sidebar .MuiListItemButton-root:hover,
+.app-sidebar .MuiListItem-root:hover {
+  background-color: transparent !important;
+}
+
+/* If your sidebar uses anchors inside list items */
+.app-sidebar a,
+.app-sidebar a:hover,
+.app-sidebar a:focus {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+/* Notifications Popper: rows inside paper */
+.MuiPopper-root .MuiPaper-root .notification-row,
+.MuiPaper-root .notification-row,
+.MuiPaper-root .MuiListItem-root,
+.MuiPaper-root .MuiListItemButton-root {
+  background-color: transparent !important;
+}
+
+/* Specific override: the notification item hover (if you used :hover in sx earlier) */
+.MuiPaper-root .notification-row:hover,
+.MuiPaper-root .MuiListItem-root:hover {
+  background-color: transparent !important;
+}
+
+/* Keep selected/active look if you use .active or .Mui-selected — do not override */
+.app-sidebar a.active,
+.app-sidebar .Mui-selected {
+  /* leave these - they will still show primary color per your other rules */
+}
+
+/* Accessibility: keep focus outline if you prefer — else remove */
+.MuiButton-root:focus,
+.MuiListItemButton-root:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }

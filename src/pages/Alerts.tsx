@@ -201,7 +201,7 @@ export default function Alerts() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen />;
+    return <LoadingSpinner  />;
   }
 
   const getStatusColor = (status: string) => {

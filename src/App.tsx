@@ -1,7 +1,6 @@
+import React, { useEffect, useState } from "react";
 import { Box, Button, useTheme } from "@mui/material";
 import { Droplets, Menu, X } from "lucide-react";
-import type React from "react";
-import { useEffect, useState } from "react";
 import {
   Navigate,
   Route,

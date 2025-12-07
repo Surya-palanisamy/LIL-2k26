@@ -62,7 +62,7 @@ export default function Shelters() {
   ]
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen  />
+    return <LoadingSpinner/>
   }
 
   const getStatusColor = (status: string) => {

@@ -1,9 +1,9 @@
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
   ClickAwayListener,
   IconButton,
-  Button as MuiButton,
   Paper,
   Popper,
   Typography,
@@ -15,19 +15,16 @@ import {
   Bell,
   Check,
   CheckCircle,
-  ChevronsUp,
   Info,
   MapPin,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
 export default function Notifications() {
   const { alerts, markAlertAsRead, clearAllAlerts } = useAppContext();
   const [open, setOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const popperRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
@@ -117,10 +114,21 @@ export default function Notifications() {
         ref={buttonRef as any}
         aria-label="Notifications"
         onClick={() => setOpen((s) => !s)}
+        disableRipple
         sx={{
           width: 40,
           height: 40,
           borderRadius: "50%",
+          minWidth: "auto",
+          p: 0,
+          color: "inherit",
+          "&:hover": {
+            backgroundColor: "transparent !important",
+          },
+          "&:focus": {
+            outline: "none",
+            boxShadow: "none",
+          },
         }}
         title="Notifications"
       >
@@ -149,6 +157,7 @@ export default function Notifications() {
           </Box>
         )}
       </Button>
+
       <Popper
         open={open}
         anchorEl={buttonRef.current}
@@ -167,7 +176,7 @@ export default function Notifications() {
               mt: isDesktop ? 0 : 1,
               width: isDesktop ? 360 : "100vw",
               maxWidth: "100vw",
-              maxHeight: isDesktop ? 480 : "80vh",
+              maxHeight: isDesktop ? 480 : "60vh",
               display: "flex",
               flexDirection: "column",
               bgcolor: "background.paper",
@@ -193,37 +202,22 @@ export default function Notifications() {
               </Typography>
 
               <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                <IconButton
-                  size="small"
-                  onClick={() => setIsExpanded((s) => !s)}
-                  sx={{ color: "text.secondary" }}
-                  title={isExpanded ? "Collapse" : "Expand"}
-                >
-                  <ChevronsUp
-                    size={16}
-                    style={{
-                      transform: isExpanded ? "rotate(180deg)" : "none",
-                      transition: "transform .2s",
-                    }}
-                  />
-                </IconButton>
-
-                <MuiButton
+                <Button
                   size="small"
                   onClick={() => clearAllAlerts()}
                   disabled={alerts.length === 0}
                   sx={{ textTransform: "none", color: "text.secondary" }}
                 >
                   Clear All
-                </MuiButton>
+                </Button>
 
-                <IconButton
+                <Button
                   size="small"
                   onClick={() => setOpen(false)}
-                  sx={{ color: "text.secondary" }}
+                  sx={{ color: "text.secondary", minWidth: "auto", p: 0.5 }}
                 >
                   <X size={16} />
-                </IconButton>
+                </Button>
               </Box>
             </Box>
 
@@ -236,9 +230,10 @@ export default function Notifications() {
                   No notifications
                 </Box>
               ) : (
-                alerts.map((alert) => (
+                alerts.map((alert: any) => (
                   <Box
                     key={alert.id}
+                    className="notification-row"
                     sx={{
                       px: 2,
                       py: 1.25,
@@ -248,7 +243,8 @@ export default function Notifications() {
                           ? "rgba(99,102,241,0.06)"
                           : "rgba(59,130,246,0.06)"
                         : "transparent",
-                      ":hover": { bgcolor: "action.hover" },
+                      // remove default hover tint:
+                      "&:hover": { bgcolor: "transparent !important" },
                       display: "flex",
                       gap: 2,
                       alignItems: "flex-start",
@@ -278,6 +274,7 @@ export default function Notifications() {
                             onClick={() => markAlertAsRead(alert.id)}
                             sx={{ color: "primary.main", p: 0.5 }}
                             aria-label="Mark as read"
+                            disableRipple
                           >
                             <Check size={14} />
                           </IconButton>
@@ -307,17 +304,20 @@ export default function Notifications() {
                         </Typography>
 
                         {alert.coordinates && (
-                          <MuiButton
+                          <Button
                             size="small"
                             onClick={() => handleNavigateToAlert(alert)}
                             sx={{
                               textTransform: "none",
                               color: "primary.main",
+                              minWidth: "auto",
+                              p: 0.5,
                             }}
+                            disableRipple
                           >
                             <MapPin size={12} style={{ marginRight: 6 }} />
                             View on map
-                          </MuiButton>
+                          </Button>
                         )}
                       </Box>
                     </Box>
