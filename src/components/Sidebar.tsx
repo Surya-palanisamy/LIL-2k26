@@ -1,18 +1,18 @@
 "use client";
-import type React from "react";
 import {
+  Avatar,
   Box,
   Collapse,
+  Divider,
+  IconButton,
+  Stack,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
-  Avatar,
-  IconButton,
   Menu,
   MenuItem,
-  Divider,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -24,13 +24,14 @@ import {
   ChevronUp,
   LayoutDashboard,
   LifeBuoy,
+  LogOut,
   MapIcon,
   PhoneCall,
   RouteIcon,
-  LogOut,
   Settings,
   User,
 } from "lucide-react";
+import type React from "react";
 import { useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
@@ -122,90 +123,30 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <Box
       sx={{
         width: 260,
-       
         display: "flex",
         flexDirection: "column",
-        gap: 1.5,
+        gap: 2,
       }}
       className="app-sidebar"
     >
       <Box sx={{ mb: 2 }}>
-        <IconButton
-          onClick={handleProfileMenuOpen}
-          sx={{
-            width: "100%",
-            justifyContent: "flex-start",
-            p: 1,
-            borderRadius: 2,
-            bgcolor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-            display: "flex",
-            gap: 1.5,
-            transition: "all 0.18s ease-out",
-          }}
-          aria-controls={profileMenuOpen ? "profile-menu" : undefined}
-          aria-haspopup="true"
-          aria-expanded={profileMenuOpen ? "true" : undefined}
-        >
-          <Avatar
-            sx={{
-              width: 40,
-              height: 40,
-              fontWeight: 700,
-              fontSize: 14,
-              bgcolor: isDark
-                ? theme.palette.grey[800]
-                : theme.palette.primary.light,
-              color: isDark ? "white" : "white",
-            }}
-          >
-            {userInitials}
-          </Avatar>
-          <Box sx={{ flex: 1, textAlign: "left", minWidth: 0 }}>
-            <Typography
-              sx={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: theme.palette.text.primary,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {user?.name || "Admin User"}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: 11,
-                color: theme.palette.text.secondary,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {user?.role || "Admin"}
-            </Typography>
-          </Box>
-        </IconButton>
-
         <Menu
           id="profile-menu"
           anchorEl={anchorEl}
           open={profileMenuOpen}
           onClose={handleProfileMenuClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
-          PaperProps={{
-            elevation: 10,
-            sx: {
-              width: 220,
-              borderRadius: 2,
-              overflow: "hidden",
-              bgcolor: isDark ? "#0b0e12" : theme.palette.background.paper,
-              color: theme.palette.text.primary,
-              boxShadow: theme.shadows[12],
-              border: `1px solid ${
-                isDark ? "rgba(255,255,255,0.04)" : theme.palette.divider
-              }`,
+          anchorOrigin={{ vertical: "top", horizontal: "left" }}
+          transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+          slotProps={{
+            paper: {
+              elevation: 10,
+              sx: {
+                width: 220,
+                borderRadius: 2,
+                overflow: "hidden",
+                boxShadow: theme.shadows[12],
+                mt: "-6px",
+              },
             },
           }}
         >
@@ -216,7 +157,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               py: 1.1,
               bgcolor: "transparent",
               "&:hover": {
-                bgcolor: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+                bgcolor: isDark ? "rgba(255,255,255)" : "rgba(0,0,0,0.02)",
               },
             }}
           >
@@ -336,15 +277,18 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 <NavIcon icon={item.icon} active={active} />
               </ListItemIcon>
 
+              {/* Use slotProps.primary instead of deprecated primaryTypographyProps */}
               <ListItemText
                 primary={item.label}
-                primaryTypographyProps={{
-                  fontSize: 14,
-                  fontWeight: active ? 600 : 500,
-                  sx: {
-                    color: getLabelColor(active),
-                    letterSpacing: 0.1,
-                  },
+                slotProps={{
+                  primary: {
+                    fontSize: 14,
+                    fontWeight: active ? 600 : 500,
+                    sx: {
+                      color: getLabelColor(active),
+                      letterSpacing: 0.1,
+                    },
+                  } as any, // cast if needed for typing; replace with proper TypographyProps import if desired
                 }}
               />
             </ListItemButton>
@@ -468,18 +412,76 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
                 <ListItemText
                   primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: 13,
-                    fontWeight: active ? 600 : 500,
-                    sx: {
-                      color: getLabelColor(active),
-                    },
+                  slotProps={{
+                    primary: {
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 500,
+                      sx: {
+                        color: getLabelColor(active),
+                      },
+                    } as any,
                   }}
                 />
               </ListItemButton>
             );
           })}
         </Collapse>
+        <hr />
+        <Box
+          onClick={handleProfileMenuOpen}
+          sx={{
+            width: "100%",
+            height: 56,
+            p: 1,
+            bgcolor: "transparent !important",
+            display: "flex",
+            gap: 2,
+            cursor: "pointer",
+            alignItems: "center",
+            borderRadius: 2,
+          }}
+          aria-controls={profileMenuOpen ? "profile-menu" : undefined}
+          aria-haspopup="true"
+          aria-expanded={profileMenuOpen ? "true" : undefined}
+        >
+          <Avatar
+            sx={{
+              width: 40,
+              height: 40,
+              fontWeight: 700,
+              fontSize: 14,
+              bgcolor: isDark
+                ? theme.palette.grey[800]
+                : theme.palette.primary.light,
+              color: isDark ? "white" : "white",
+            }}
+          >
+            {userInitials}
+          </Avatar>
+          <Box sx={{ flex: 1, textAlign: "left", minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontSize: 13,
+
+                color: "red",
+                overflow: "hidden",
+              }}
+            >
+              {user?.name || "Admin User"}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: "green",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {user?.role || "Admin"}
+            </Typography>
+          </Box>
+        </Box>
       </List>
     </Box>
   );

@@ -203,45 +203,7 @@ function AppContent() {
         <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
 
         {/* Footer / profile */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            width: "50%",
-            p: 2,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <div>
-                <ProfileMenu />
-              </div>
-              <Box>
-                <Box
-                  sx={{
-                    fontWeight: 500,
-                    color: (t) =>
-                      t.palette.mode === "dark"
-                        ? t.palette.common.white
-                        : t.palette.text.primary,
-                  }}
-                >
-                  {user?.name || "Admin User"}
-                </Box>
-                <Box sx={{ fontSize: "0.875rem", color: "text.secondary" }}>
-                  {user?.email || "admin@floodwatch.com"}
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+        
       </Box>
 
       {/* Main content */}
