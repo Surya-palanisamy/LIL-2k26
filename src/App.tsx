@@ -11,21 +11,21 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
-import ThemeToggler from "./components/ThemeToggler";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Notifications from "./components/Notifications";
 import Sidebar from "./components/Sidebar";
+import ThemeToggler from "./components/ThemeToggler";
 import { AppProvider, useAppContext } from "./context/AppContext";
 
+import ProfileMenu from "./components/ProfileMenu";
 import Alerts from "./pages/Alerts";
 import Dashboard from "./pages/Dashboard";
 import EmergencyHelp from "./pages/EmergencyHelp";
 import MapView from "./pages/MapView";
 import SafeRoutes from "./pages/SafeRoutes";
+import SettingsPage from "./pages/SettingsPage";
 import Shelters from "./pages/Shelters";
 import SignInSide from "./sign-in-side/SignInSide";
-import ProfileMenu from "./components/ProfileMenu";
-import SettingsPage from "./pages/SettingsPage";
 
 /* ProtectedRoute kept as-is */
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

@@ -1,4 +1,3 @@
-import CssBaseline from "@mui/material/CssBaseline";
 import Stack from "@mui/material/Stack";
 import ThemeToggler from "../components/ThemeToggler";
 import AppTheme from "../shared-theme/AppTheme";

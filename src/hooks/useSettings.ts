@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
 export interface SettingsState {
   // Account
@@ -19,7 +19,7 @@ export function useSettings() {
   const [settings, setSettings] = useState<SettingsState>({
     fullName: "Admin User",
     email: "admin@floodwatch.com",
-    phone: "(555) 123-4567",
+    phone: "(+91) 1234567890",
     avatar: null,
     theme: "system",
     twoFactorEnabled: false,

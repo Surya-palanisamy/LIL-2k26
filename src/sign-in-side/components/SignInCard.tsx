@@ -16,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import { GoogleIcon, SitemarkIcon } from "./CustomIcons";
 import ForgotPassword from "./ForgotPassword";
-import { Droplets } from "lucide-react";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
