@@ -122,13 +122,8 @@ export default function Notifications() {
           minWidth: "auto",
           p: 0,
           color: "inherit",
-          "&:hover": {
-            backgroundColor: "transparent !important",
-          },
-          "&:focus": {
-            outline: "none",
-            boxShadow: "none",
-          },
+          "&:hover": { backgroundColor: "transparent !important" },
+          "&:focus": { outline: "none", boxShadow: "none" },
         }}
         title="Notifications"
       >
@@ -163,9 +158,14 @@ export default function Notifications() {
         anchorEl={buttonRef.current}
         placement={isDesktop ? "bottom-end" : "bottom"}
         style={{ zIndex: 1400 }}
+        disablePortal={false}
         modifiers={[
           { name: "offset", options: { offset: [0, 8] } },
-          { name: "preventOverflow", options: { padding: 8 } },
+          {
+            name: "preventOverflow",
+            options: { padding: 8, boundary: "viewport" },
+          },
+          // keep computeStyles enabled so Popper positions correctly on mobile
         ]}
       >
         <ClickAwayListener onClickAway={() => setOpen(false)}>
@@ -174,8 +174,9 @@ export default function Notifications() {
             elevation={8}
             sx={{
               mt: isDesktop ? 0 : 1,
-              width: isDesktop ? 360 : "100vw",
-              maxWidth: "100vw",
+              width: "auto", // allow popper to size itself
+              minWidth: isDesktop ? 360 : 100, // ensure a usable minimum on small screens
+              maxWidth: isDesktop ? 360 : "95vw", // never exceed viewport on small screens
               maxHeight: isDesktop ? 480 : "60vh",
               display: "flex",
               flexDirection: "column",
@@ -183,6 +184,8 @@ export default function Notifications() {
               borderRadius: 1,
               overflow: "hidden",
               border: (t) => `1px solid ${t.palette.divider}`,
+              // small visual nudge to keep popper away from edges on tiny screens:
+              px: isDesktop ? 0 : 1,
             }}
           >
             {/* header */}
@@ -206,7 +209,12 @@ export default function Notifications() {
                   size="small"
                   onClick={() => clearAllAlerts()}
                   disabled={alerts.length === 0}
-                  sx={{ textTransform: "none", color: "text.secondary" }}
+                  sx={{
+                    textTransform: "none",
+                    color: "text.secondary",
+                    minWidth: "auto",
+                    p: 0.5,
+                  }}
                 >
                   Clear All
                 </Button>
@@ -243,7 +251,6 @@ export default function Notifications() {
                           ? "rgba(99,102,241,0.06)"
                           : "rgba(59,130,246,0.06)"
                         : "transparent",
-                      // remove default hover tint:
                       "&:hover": { bgcolor: "transparent !important" },
                       display: "flex",
                       gap: 2,

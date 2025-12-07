@@ -1,57 +1,39 @@
 @import "tailwindcss";
-
-/* Global smooth transitions */
 * {
   transition: background-color 0.3s ease, color 0.3s ease,
     border-color 0.3s ease;
 }
-
-/* MUI color scheme helpers */
 html[data-mui-color-scheme="dark"] {
   color-scheme: dark;
 }
-
 html[data-mui-color-scheme="light"] {
   color-scheme: light;
 }
-
-/* Leaflet container size */
 .leaflet-container {
   width: 100%;
   height: 100%;
 }
-
-/* Smooth theme transitions for MUI elements */
 .MuiPaper-root,
 .MuiButton-root,
 .MuiIconButton-root,
 .MuiCard-root {
   transition: background-color 0.3s ease, color 0.3s ease !important;
 }
-
-/* 🌓 Dark mode body text (base only, not everything!) */
 html[data-mui-color-scheme="dark"] body {
   color: rgb(229, 231, 235);
 }
-
-/* Optional helper class */
 html[data-mui-color-scheme="dark"] .text-neutral-dark {
   color: rgb(229, 231, 235);
 }
-
-/* Input styling only, no global overrides */
 html[data-mui-color-scheme="dark"] .MuiTextField-root .MuiOutlinedInput-root,
 html[data-mui-color-scheme="dark"] .MuiSelect-root {
   color: rgb(229, 231, 235);
 }
-
-/* Responsive adjustments */
 @media (max-width: 1024px) {
   body {
     font-size: 14px;
   }
 }
-
 html[data-mui-color-scheme="dark"] .app-sidebar a,
 html[data-mui-color-scheme="dark"] .app-sidebar a *,
 html[data-mui-color-scheme="dark"] .app-sidebar .MuiListItemIcon-root svg {
@@ -59,38 +41,30 @@ html[data-mui-color-scheme="dark"] .app-sidebar .MuiListItemIcon-root svg {
   fill: #ffffff !important;
   stroke: #ffffff !important;
 }
-
-/* Active link in DARK MODE = primary color */
 html[data-mui-color-scheme="dark"] .app-sidebar a.active,
 html[data-mui-color-scheme="dark"] .app-sidebar a.active * {
   color: var(--mui-palette-primary-main, #1976d2) !important;
   fill: var(--mui-palette-primary-main, #1976d2) !important;
   stroke: var(--mui-palette-primary-main, #1976d2) !important;
 }
-
-/* LIGHT MODE — no force, let MUI handle */
 html[data-mui-color-scheme="light"] .app-sidebar a,
 html[data-mui-color-scheme="light"] .app-sidebar a * {
   color: inherit !important;
   stroke: inherit !important;
   fill: inherit !important;
 }
-
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
   will-change: clip-path, opacity, transform;
 }
-
-/* ---------- Fix typo (was invalid) ---------- */
 html[data-mui-color-scheme="dark"] {
-  transition: background-color 200ms linear, color 200ms linear;
+  transition: background-co lor 200ms linear, color 200ms linear;
 }
 html[data-mui-color-scheme="light"] {
   transition: background-color 200ms linear, color 200ms linear;
 }
-
 html[data-mui-color-scheme="dark"] .MuiMenu-paper,
 html[data-mui-color-scheme="dark"] .MuiPopover-paper,
 html[data-mui-color-scheme="dark"] .MuiMenu-list {
@@ -98,80 +72,11 @@ html[data-mui-color-scheme="dark"] .MuiMenu-list {
   color: rgba(255, 255, 255, 0.9) !important;
   border: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
-
-/* menu items */
 html[data-mui-color-scheme="dark"] .MuiMenuItem-root,
 html[data-mui-color-scheme="dark"] .MuiMenuItem-root .MuiListItemText-primary {
   color: rgba(255, 255, 255, 0.9) !important;
 }
-
-/* header text inside custom menu */
 html[data-mui-color-scheme="dark"] .MuiMenu-paper .profile-menu-header,
 html[data-mui-color-scheme="dark"] .MuiMenu-paper .profile-menu-header * {
   color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* ---------- Force-transparent hover for key MUI controls ---------- */
-/* Buttons & icon buttons (global) */
-.MuiButton-root,
-.MuiIconButton-root {
-  min-width: 0 !important;       /* avoid extra horizontal space */
-  padding: 0 !important;         /* optional: remove extra internal padding */
-}
-
-/* Remove background on hover / focus for primary interactive components */
-.MuiButton-root:hover,
-.MuiIconButton-root:hover,
-.MuiButton-root:focus,
-.MuiIconButton-root:focus {
-  background-color: transparent !important;
-  box-shadow: none !important;
-}
-
-/* Sidebar list items */
-.app-sidebar .MuiListItemButton-root,
-.app-sidebar .MuiListItem-root {
-  background-color: transparent !important;
-  transition: background-color 0.2s ease !important;
-}
-
-/* Prevent hover fill for sidebar items */
-.app-sidebar .MuiListItemButton-root:hover,
-.app-sidebar .MuiListItem-root:hover {
-  background-color: transparent !important;
-}
-
-/* If your sidebar uses anchors inside list items */
-.app-sidebar a,
-.app-sidebar a:hover,
-.app-sidebar a:focus {
-  background-color: transparent !important;
-  color: inherit !important;
-}
-
-/* Notifications Popper: rows inside paper */
-.MuiPopper-root .MuiPaper-root .notification-row,
-.MuiPaper-root .notification-row,
-.MuiPaper-root .MuiListItem-root,
-.MuiPaper-root .MuiListItemButton-root {
-  background-color: transparent !important;
-}
-
-/* Specific override: the notification item hover (if you used :hover in sx earlier) */
-.MuiPaper-root .notification-row:hover,
-.MuiPaper-root .MuiListItem-root:hover {
-  background-color: transparent !important;
-}
-
-/* Keep selected/active look if you use .active or .Mui-selected — do not override */
-.app-sidebar a.active,
-.app-sidebar .Mui-selected {
-  /* leave these - they will still show primary color per your other rules */
-}
-
-/* Accessibility: keep focus outline if you prefer — else remove */
-.MuiButton-root:focus,
-.MuiListItemButton-root:focus {
-  outline: none !important;
-  box-shadow: none !important;
 }
